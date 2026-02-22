@@ -1,5 +1,9 @@
+//https://rapidapi.com/justin-WFnsXH_t6/api/exercisedb/playground/apiendpoint_440b547f-78b4-4b1e-a641-fd9201d44d10
+//https://rapidapi.com/h0p3rwe/api/youtube-search-and-download/playground/apiendpoint_d54cc9b5-b640-4575-a53f-a2d0ff326c79
+
 //https://www.youtube.com/watch?v=KBpoBc98BwM
 9:15
 1:06:00 
 1:21:00 -> provjeriti api
 KOJA PICKA METRINA NE RADI
+1:59:00

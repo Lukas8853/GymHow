@@ -28,13 +28,13 @@ body {
     border-radius: 4px;
     position: absolute;
     bottom: -20px;
-    right: 80px;
+    right: 140px; /*prije je bio 80px*/
     transform: scale(1, 1);
     transition: 0.3s all ease-in-out;
   }
-  
+  /*ovo zakomentirani dio promijeni ako zelis da su ti strelice -> <-, a ne <- ->*/
   .right-arrow {
-    right: 140px;
+    right: 80px; /*prije je bio 140px*/
   }
   
   .right-arrow:hover,

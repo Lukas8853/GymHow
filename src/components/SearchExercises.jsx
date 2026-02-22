@@ -23,11 +23,13 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
   const handleSearch = async () => {
     if (search) {
       const exercisesData = await fetchData(
-        "https://exercisedb.p.rapidapi.com/exercises",
+        /*`https://wger.de/api/v2/exercise/search/?term=${search}&language=english&format=json`,
+        {},*/ //ovo radi i izbacuje sve rezultate, ali onda moramo mijenjati više stvari jer ne vraća bodypart i name nego value i data. Moramo prilagoditi da funkcionira
+        `https://exercisedb.p.rapidapi.com/exercises/name/${search}?limit=100&offset=0`,
         exerciseOptions,
       );
 
-
+      //console.log("exercisesData", exercisesData); // dodaj ovo
       const searchedExercises = exercisesData.filter(
         (exercise) =>
           exercise.name.toLowerCase().includes(search) ||
@@ -35,9 +37,9 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
           exercise.equipment.toLowerCase().includes(search) ||
           exercise.bodyPart.toLowerCase().includes(search),
       );
-
+      //console.log("searchedExercises", searchedExercises); // i ovo
       setSearch("");
-      setExercises(searchedExercises);
+      setExercises(exercisesData);
     }
   };
 
