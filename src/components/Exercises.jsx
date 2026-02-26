@@ -7,14 +7,14 @@ import ExerciseCard from "./ExerciseCard";
 
 const Exercises = ({ exercises, setExercises, bodyPart }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const exercisesPerPage = 9;
+  const exercisesPerPage = 4; //broj vježbi koje se prikazuju na jednoj stranici
 
   const indexOfLastExercise = currentPage * exercisesPerPage;
   const indexOfFirstExercise = indexOfLastExercise - exercisesPerPage;
-  const currentExercises = exercises.slice(
-    indexOfFirstExercise,
-    indexOfLastExercise,
-  ); //računa se do koje vježbe se pokazuje na jednoj stranici i na kojoj vježbi krenut na drugoj stranici
+  const currentExercises = Array.isArray(exercises)
+    ? exercises.slice(indexOfFirstExercise, indexOfLastExercise)
+    : []; //računa se do koje vježbe se pokazuje na jednoj stranici i na kojoj vježbi krenut na drugoj stranici
+  //ako možemo povući vježbe, onda se slice-aju, a ako ne možemo onda se currentExercises postavlja kao prazno polje kako ne bi doslo do errora
 
   const paginate = (e, value) => {
     //event = e, value = page number
@@ -25,6 +25,13 @@ const Exercises = ({ exercises, setExercises, bodyPart }) => {
   useEffect(() => {
     //funkcija za dohvaćanje vježbi, ovisno o tome koji bodyPart je odabran
     const fetchExercisesData = async () => {
+      const cachedExercises = localStorage.getItem(`exercises_${bodyPart}`);
+      if (cachedExercises) {
+        setExercises(JSON.parse(cachedExercises));
+        return;
+      } //ako su vježbe već dohvaćene i spremljene u localStorage, onda se one koriste umjesto da se ponovo dohvaćaju s API-ja
+      // tako možemo smanjiti broj API poziva i ubrzati učitavanje vježbi
+
       let exercisesData = [];
 
       if (bodyPart === "all") {
@@ -39,6 +46,10 @@ const Exercises = ({ exercises, setExercises, bodyPart }) => {
         ); //ako nije all onda se ispise samo taj bodyPart
       }
 
+      localStorage.setItem(
+        `exercises_${bodyPart}`,
+        JSON.stringify(exercisesData),
+      );
       setExercises(exercisesData);
     };
     fetchExercisesData();
@@ -51,7 +62,7 @@ const Exercises = ({ exercises, setExercises, bodyPart }) => {
         Showing Results
       </Typography>
       <Stack
-        direction="row"
+        direction={{ lg: "row", xs: "column" }}
         sx={{ gap: { lg: "110px", xs: "50px" } }}
         flex="wrap"
         justifyContent="center"

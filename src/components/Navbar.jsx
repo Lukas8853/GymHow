@@ -1,18 +1,39 @@
 import React from "react";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
 import { Box, Stack } from "@mui/material"; //služi za organizaciju elemenata u stacku, može biti horizontalno ili vertikalno
+import { useTranslation } from "react-i18next"; //služi za prevođenje teksta na različite jezike
 import SettingsIcon from "@mui/icons-material/Settings";
+import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
+import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 
+import { AppContext } from "../AppContext";
 import Logo from "../assets/images/Logo.png";
 import zIndex from "@mui/material/styles/zIndex";
 
 const Navbar = () => {
   const dropDownMenuRef = useRef(null);
   const [isDropDownMenuOpen, setIsDropDownMenuOpen] = useState(false);
+  const { isDarkMode, setIsDarkMode } = useContext(AppContext);
+  const { i18n } = useTranslation();
 
   function toggleDropDownMenu() {
     setIsDropDownMenuOpen((prevState) => !prevState);
+  }
+
+  function changeLanguage() {
+    if (i18n.language === "hr") {
+      i18n.changeLanguage("en");
+    } else {
+      i18n.changeLanguage("hr");
+    }
+    console.log("Current language: ", i18n.language);
+  }
+
+  function toggleDarkMode() {
+    setIsDarkMode((prevMode) => !prevMode);
+    localStorage.setItem("isDarkMode", !isDarkMode);
+    console.log("Navbar > toggleDarkMode > isDarkMode:", !isDarkMode);
   }
 
   useEffect(() => {
@@ -35,9 +56,10 @@ const Navbar = () => {
       direction="row"
       justifyContent="space-around"
       sx={{
-        gap: { sm: "122px", xs: "40px" },
+        gap: { sm: "122px", xs: "20px" },
         marginTop: { sm: "32px", xs: "20px" },
-        justifyContent: "none",
+        justifyContent: "space-between",
+        alignItems: "center",
       }}
       px="20px"
       ref={dropDownMenuRef}
@@ -46,11 +68,20 @@ const Navbar = () => {
         <img
           src={Logo}
           alt="logo"
-          style={{ width: "48px", height: "48px", margin: "0 20px" }}
+          style={{
+            width: "48px",
+            height: "48px",
+            margin: "lg: 0 20px, xs: 0 10px",
+          }}
         />
       </Link>
 
-      <Stack direction="row" gap="40px" fontSize="24px" alignItems="flex-end">
+      <Stack
+        direction="row"
+        gap={{ sm: "40px", xs: "20px" }}
+        fontSize="24px"
+        alignItems="flex-end"
+      >
         <Link
           to="/"
           style={{
@@ -68,7 +99,68 @@ const Navbar = () => {
           Exercises
         </a>
       </Stack>
-      <Box sx={{ position: "relative", marginLeft: "auto", zIndex: 9999 }}>
+      <Box
+        sx={{
+          position: "relative",
+          marginLeft: "auto",
+          zIndex: 9999,
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        {isDarkMode ? (
+          <button
+            onClick={toggleDarkMode}
+            style={{
+              marginRight: "20px",
+              width: "48px",
+              height: "48px",
+              border: "none",
+              borderRadius: "8px",
+              backgroundColor: "black",
+              color: "white",
+              cursor: "pointer",
+              verticalAlign: "middle",
+            }}
+          >
+            <DarkModeOutlinedIcon />
+          </button>
+        ) : (
+          <button
+            onClick={toggleDarkMode}
+            style={{
+              marginRight: "20px",
+              width: "48px",
+              height: "48px",
+              border: "none",
+              borderRadius: "8px",
+              backgroundColor: "black",
+              color: "white",
+              cursor: "pointer",
+              verticalAlign: "middle",
+            }}
+          >
+            <LightModeOutlinedIcon />
+          </button>
+        )}
+
+        <button
+          onClick={changeLanguage}
+          style={{
+            marginRight: "20px",
+            width: "48px",
+            height: "48px",
+            border: "none",
+            borderRadius: "8px",
+            backgroundColor: "#020202",
+            color: "#fff",
+            cursor: "pointer",
+            verticalAlign: "middle",
+          }}
+        >
+          {i18n.language === "hr" ? "EN" : "HR"}
+        </button>
+
         <button
           onClick={toggleDropDownMenu}
           style={{
@@ -78,7 +170,7 @@ const Navbar = () => {
             padding: 0,
           }}
         >
-          <SettingsIcon sx={{fontSize:"30px"}} />
+          <SettingsIcon sx={{ fontSize: "48px", verticalAlign: "middle" }} />
         </button>
         {isDropDownMenuOpen && (
           <Stack

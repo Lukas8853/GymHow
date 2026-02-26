@@ -2,11 +2,13 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button, Stack, Typography } from "@mui/material/";
 
+import placeholder from "../assets/images/placeholder.png";
+
 const ExerciseCard = ({ exercise }) => {
   console.log(exercise);
   return (
     <Link className="exercise-card" to={`/exercise/${exercise.id}`}>
-      <img src={exercise.gifUrl} alt={exercise.name} loading="lazy" />
+      <img src={placeholder} alt={exercise.name} loading="lazy" />
       <Stack direction="row">
         <Button
           sx={{
@@ -56,3 +58,7 @@ export default ExerciseCard;
 // onError={(e) => { e.target.src = '/placeholder.png' }}
 //   <img src={exercise.gifUrl} alt={exercise.name} loading="lazy" onError={(e) => { e.target.src = '/placeholder.png' }} />
 // naravno slike moramo onda dodati u neki folder mozemo ga nazvat "placeholder" u "assets"
+
+// ne radi placeholder tako da moramo umjesto exercise.gifUrl stavit placeholder.png, ali onda nećemo imat slike vježbi nego samo placeholder, ali bar će bit nešto
+// kasnije to onda samo zamijenimo i bok
+// na 11.liniji <img src={exercise.gifUrl} alt={exercise.name} loading="lazy" />
