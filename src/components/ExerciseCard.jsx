@@ -8,7 +8,7 @@ const ExerciseCard = ({ exercise }) => {
   console.log(exercise);
   return (
     <Link className="exercise-card" to={`/exercise/${exercise.id}`}>
-      <img src={placeholder} alt={exercise.name} loading="lazy" />
+      <img src={exercise.gifUrl || placeholder} alt={exercise.name} loading="lazy" />
       <Stack direction="row">
         <Button
           sx={{
@@ -62,3 +62,4 @@ export default ExerciseCard;
 // ne radi placeholder tako da moramo umjesto exercise.gifUrl stavit placeholder.png, ali onda nećemo imat slike vježbi nego samo placeholder, ali bar će bit nešto
 // kasnije to onda samo zamijenimo i bok
 // na 11.liniji <img src={exercise.gifUrl} alt={exercise.name} loading="lazy" />
+// za placeholder: <img src={placeholder} alt={exercise.name} loading="lazy" />

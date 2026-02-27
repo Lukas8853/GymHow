@@ -4,6 +4,7 @@ import { Stack, Typography } from "@mui/material";
 import Icon from "../assets/icons/gym.png";
 import All from "../assets/icons/bodyParts/FullBody.png";
 import Back from "../assets/icons/bodyParts/back.png";
+import Cardio from "../assets/icons/bodyParts/cardio.png";
 import Chest from "../assets/icons/bodyParts/chest.png";
 import LowerArms from "../assets/icons/bodyParts/lowerArms.png";
 import LowerLegs from "../assets/icons/bodyParts/lowerLegs.png";
@@ -40,24 +41,26 @@ const BodyPart = ({ item, setBodyPart, bodyPart }) => {
             ? All
             : item === "back"
               ? Back
-              : item === "chest"
-                ? Chest
-                : item === "lower arms"
-                  ? LowerArms
-                  : item === "lower legs"
-                    ? LowerLegs
-                    : item === "neck"
-                      ? Neck
-                      : item === "shoulders"
-                        ? Shoulders
-                        : item === "upper arms"
-                          ? UpperArms
-                          : item === "upper legs"
-                            ? UpperLegs
-                            : Waist
+              : item === "cardio"
+                ? Cardio
+                : item === "chest"
+                  ? Chest
+                  : item === "lower arms"
+                    ? LowerArms
+                    : item === "lower legs"
+                      ? LowerLegs
+                      : item === "neck"
+                        ? Neck
+                        : item === "shoulders"
+                          ? Shoulders
+                          : item === "upper arms"
+                            ? UpperArms
+                            : item === "upper legs"
+                              ? UpperLegs
+                              : Waist
         } //ako je item all onda se stavi All, ako je back onda se stavi Back itd.
         alt={item}
-        style={{ width: "40px", height: "40px" }}
+        style={{ width: "60px", height: "60px" }}
       />
       <Typography
         fontSize="24px"

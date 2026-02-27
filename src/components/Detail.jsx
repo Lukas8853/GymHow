@@ -1,17 +1,29 @@
-import React from "react";
+import React, { useContext, useState } from "react";
 import { Typography, Stack, Button } from "@mui/material";
+import { AppContext } from "../AppContext";
 
 import BodyPartImage from "../assets/icons/body-part.png";
 import TargetImage from "../assets/icons/target.png";
 import EquipmentImage from "../assets/icons/equipment.png";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import FavoriteIcon from "@mui/icons-material/Favorite";
 
 const Detail = ({ exerciseDetail }) => {
-  const { bodyPart, gifUrl, name, target, equipment } = exerciseDetail;
+  const { bodyPart, gifUrl, name, target, equipment, id } = exerciseDetail;
+  const { favorites, toggleFavorite } = useContext(AppContext);
+  const isFavorite = favorites.includes(id);
 
   const extraDetail = [
     { icon: BodyPartImage, name: bodyPart },
     { icon: TargetImage, name: target },
     { icon: EquipmentImage, name: equipment },
+    {
+      icon: isFavorite ? FavoriteIcon : FavoriteBorderIcon,
+      name: isFavorite ? "Remove from Favorites" : "Add to Favorites",
+      onClick: () => {
+        toggleFavorite(id);
+      },
+    },
   ];
 
   return (
@@ -34,6 +46,7 @@ const Detail = ({ exerciseDetail }) => {
         {extraDetail.map((item) => (
           <Stack key={item.name} direction="row" gap="24px" alignItems="center">
             <Button
+              onClick={item.onClick}
               sx={{
                 background: "#fff2db",
                 borderRadius: "50%",
@@ -41,11 +54,15 @@ const Detail = ({ exerciseDetail }) => {
                 height: "100px",
               }}
             >
-              <img
-                src={item.icon}
-                alt={bodyPart}
-                style={{ width: "50px", height: "50px" }}
-              />
+              {typeof item.icon === "string" ? (
+                <img
+                  src={item.icon}
+                  alt={bodyPart}
+                  style={{ width: "50px", height: "50px" }}
+                />
+              ) : (
+                <item.icon style={{ width: "50px", height: "50px" }} />
+              )}
             </Button>
             <Typography textTransform="capitalize" variant="h5">
               {item.name}

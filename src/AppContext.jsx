@@ -5,6 +5,24 @@ export const AppContext = createContext();
 export function AppContextProvider({ children }) {
   const [username, setUsername] = useState(null);
 
+  const [favorites, setFavorites] = useState(() => {
+    const storedFavorite = localStorage.getItem("favorites");
+    console.log("AppContext > useState > storedFavorite:", storedFavorite);
+    return storedFavorite ? JSON.parse(storedFavorite) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("favorites", JSON.stringify(favorites));
+  }, [favorites]);
+
+  const toggleFavorite = (exerciseID) => {
+    setFavorites((previous) =>
+      previous.includes(exerciseID)
+        ? previous.filter((id) => id !== exerciseID)
+        : [...previous, exerciseID],
+    );
+  };
+
   const [isDarkModeStored, setIsDarkModeStored] = useState(() => {
     const storedIsDarkMode = localStorage.getItem("isDarkMode");
     console.log("AppContext > useState > storedIsDarkMode:", storedIsDarkMode);
@@ -33,7 +51,14 @@ export function AppContextProvider({ children }) {
 
   return (
     <AppContext.Provider
-      value={{ isDarkMode, setIsDarkMode, username, setUsername }}
+      value={{
+        isDarkMode,
+        setIsDarkMode,
+        username,
+        setUsername,
+        favorites,
+        toggleFavorite,
+      }}
     >
       {children}
     </AppContext.Provider>
