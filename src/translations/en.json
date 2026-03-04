@@ -1,4 +1,55 @@
 {
+  "navbar": {
     "home": "Home",
-    "exercises": "Exercises"
+    "exercises": "Exercises",
+    "profile": "Profile",
+    "settings": "Settings",
+    "login": "Login"
+  },
+
+  "heroBanner": {
+    "fitnessClub": "Fitness Club",
+    "title": "Sweat, smile <br /> and Repeat",
+    "subtitle": "Check out the most effective exercises",
+    "button": "Explore exercises",
+    "watermark": "Exercise"
+    },
+    "footer": {
+        "credit": "Effort put in by Mislav Serdar and Lukas Rigo"
+    },
+    "searchExercises": {
+      "title": "Awesome exercises that <br /> you should know",
+      "placeholder": "Search exercises",
+      "button": "Search"
+    },
+    "detail": {
+       "addToFavorite": "Add to Favorites",
+       "removeFromFavorite": "Remove from Favorites",
+       "description": "Exercises keep you strong. {{name}} is one of the best exercises to target your {{target}}. It will help you improve your mood and gain energy."
+    },
+    "exerciseVideos": {
+       "loading": "Loading...",
+        "title": "Watch <highlight>{{name}}</highlight> exercise videos"
+    },
+    "similarExercises":{
+        "targetSameMuscleGroup": "Exercises that target the same muscle group",
+        "exercisesSameEquipment": "Exercises that use the same equipment"
+    },
+    "exercises": {
+      "showingResults": "Showing Results"
+    },
+    "bodyParts": {
+      "all": "All",
+      "back": "Back",
+      "cardio": "Cardio",
+      "chest": "Chest",
+      "lower arms": "Lower Arms",
+      "lower legs": "Lower Legs",
+      "neck": "Neck",
+      "shoulders": "Shoulders",
+      "upper arms": "Upper Arms",
+      "upper legs": "Upper Legs",
+      "waist": "Waist",
+      "abs": "Abs"
+    }
 }

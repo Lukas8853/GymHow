@@ -1,9 +1,11 @@
 import React from "react";
 import { Box, Stack, Typography, Button } from "@mui/material";
-
+import { useTranslation, Trans } from "react-i18next"; // ovo je za koristenjke </br> jer u i18n nema te mogucnosti, koristimo break u naslovui herobannera tamo onaj tekst
 import HeroBannerImage from "../assets/images/banner.png";
 
 const HeroBanner = () => {
+  const { t } = useTranslation();
+
   return (
     <Box
       sx={{ mt: { lg: "212px", xs: "70px" }, ml: { sm: "50px" } }}
@@ -11,7 +13,7 @@ const HeroBanner = () => {
       padding="20px"
     >
       <Typography color="#FF2625" fontWeight="600" fontSize="26px">
-        Fitness Club
+        {t("heroBanner.fitnessClub")}
       </Typography>
       <Typography
         fontWeight={700}
@@ -19,10 +21,10 @@ const HeroBanner = () => {
         marginBottom="23px"
         mt="30px"
       >
-        Sweat, smile <br /> and Repeat
+        <Trans i18nKey="heroBanner.title" components={{ br: <br /> }} /> 
       </Typography>
       <Typography fontSize="22px" lineHeight="35px" marginBottom={4}>
-        Check out the most effective exercises
+        {t("heroBanner.subtitle")}
       </Typography>
       <Button
         variant="contained"
@@ -30,7 +32,7 @@ const HeroBanner = () => {
         href="#exercises"
         sx={{ backgroundColor: "#FF2625", padding: "10px" }}
       >
-        Explore exercises
+        {t("heroBanner.button")}
       </Button>
       <Typography
         fontWeight={600}
@@ -38,7 +40,7 @@ const HeroBanner = () => {
         sx={{ opacity: 0.1, display: { lg: "block", xs: "none" } }}
         fontSize="200px"
       >
-        Exercise
+        {t("heroBanner.watermark")}
       </Typography>
       <img src={HeroBannerImage} alt="banner" className="hero-banner-img" />
     </Box>

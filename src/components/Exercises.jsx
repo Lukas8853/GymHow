@@ -4,10 +4,12 @@ import { Box, Stack, Typography } from "@mui/material/";
 
 import { exerciseOptions, fetchData } from "../utils/fetchData";
 import ExerciseCard from "./ExerciseCard";
+import { useTranslation } from "react-i18next";
 
 const Exercises = ({ exercises, setExercises, bodyPart }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const exercisesPerPage = 4; //broj vježbi koje se prikazuju na jednoj stranici
+  const { t } = useTranslation();
 
   const indexOfLastExercise = currentPage * exercisesPerPage;
   const indexOfFirstExercise = indexOfLastExercise - exercisesPerPage;
@@ -59,7 +61,7 @@ const Exercises = ({ exercises, setExercises, bodyPart }) => {
   return (
     <Box id="exercises" sx={{ mt: { lg: "110px" } }} mt="50px" p="20px">
       <Typography variant="h3" mb="46px">
-        Showing Results
+        {t("exercises.showingResults")}
       </Typography>
       <Stack
         direction={{ lg: "row", xs: "column" }}

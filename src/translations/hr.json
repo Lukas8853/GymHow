@@ -1,4 +1,54 @@
 {
+  "navbar": {
     "home": "Početna",
-    "exercises": "Vježbe"
+    "exercises": "Vježbe",
+    "profile": "Profil",
+    "settings": "Postavke",
+    "login": "Prijava"
+  },
+  "heroBanner": {
+  "fitnessClub": "Fitness Klub",
+  "title": "Znoji se, nasmiješi se <br /> i ponovi",
+  "subtitle": "Pogledaj najučinkovitije vježbe",
+  "button": "Istraži vježbe",
+  "watermark": "Vježba"
+    },
+    "footer": {
+      "credit": "Trud uložio Mislav Serdar i Lukas Rigo"
+    },
+    "searchExercises": {
+      "title": "Izvrsne vježbe koje <br /> trebate znati",
+      "placeholder": "Pretraži vježbe",
+      "button": "Pretraži"
+    },
+    "detail": {
+    "addToFavorite": "Dodaj u omiljeno",
+    "removeFromFavorite": "Ukloni iz omiljenih",
+    "description": "Vježbe te čine jačim. {{name}} je jedna od najboljih vježbi za {{target}}. Pomoći će ti poboljšati raspoloženje i dobiti energiju."
+    },
+    "exerciseVideos": {
+    "loading": "Učitavanje...",
+    "title": "Pogledaj videe vježbe <highlight>{{name}}</highlight>"
+    },
+    "similarExercises":{
+        "targetSameMuscleGroup": "Vježbe koje ciljaju istu mišićnu grupu",
+        "exercisesSameEquipment": "Vježbe koje koriste istu opremu"
+    },
+    "exercises": {
+      "showingResults": "Prikaz rezultata"
+    },
+    "bodyParts": {
+      "all": "Sve",
+      "back": "Leđa",
+      "cardio": "Kardio",
+      "chest": "Prsa",
+      "lower arms": "Podlaktice",
+      "lower legs": "Potkoljenice",
+      "neck": "Vrat",
+      "shoulders": "Ramena",
+      "upper arms": "Nadlaktice",
+      "upper legs": "Natkoljenice",
+      "waist": "Struk",
+      "abs": "Trbuh"
+    }
 }

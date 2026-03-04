@@ -13,8 +13,9 @@ import Shoulders from "../assets/icons/bodyParts/shoulders.png";
 import UpperArms from "../assets/icons/bodyParts/upperArms.png";
 import UpperLegs from "../assets/icons/bodyParts/upperLegs.png";
 import Waist from "../assets/icons/bodyParts/waist.png";
-
+import { useTranslation } from "react-i18next";
 const BodyPart = ({ item, setBodyPart, bodyPart }) => {
+  const { t } = useTranslation();
   return (
     <Stack
       type="button"
@@ -68,7 +69,7 @@ const BodyPart = ({ item, setBodyPart, bodyPart }) => {
         color="#3A1212"
         textTransform="capitalize"
       >
-        {item}
+        {t(`bodyParts.${item}`, item)}
       </Typography>
     </Stack>
   );

@@ -1,18 +1,22 @@
 import React from "react";
 import { Box, Stack, Typography } from "@mui/material";
+import { useTranslation, Trans } from "react-i18next";
 
 const ExerciseVideos = ({ exerciseVideos, name }) => {
+  const { t } = useTranslation();
   console.log({ exerciseVideos });
-  if (!exerciseVideos.length) return "Loading...";
+  if (!exerciseVideos.length) return t("exerciseVideos.loading");
 
   return (
     <Box sx={{ marginTop: { lg: "200px", xs: "20px" } }} padding="20px">
       <Typography variant="h3" marginBottom="33px">
-        Watch{" "}
-        <span style={{ color: "#ff2625", textTransform: "capitalize" }}>
-          {name}
-        </span>{" "}
-        exercise videos
+        <Trans
+          i18nKey="exerciseVideos.title"
+          values={{ name }}
+          components={{
+           highlight: <span style={{ color: "#ff2625", textTransform: "capitalize" }} />
+         }}
+        />
       </Typography>
       <Stack
         justifyContent="flex-start"

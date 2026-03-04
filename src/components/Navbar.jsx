@@ -15,7 +15,7 @@ const Navbar = () => {
   const dropDownMenuRef = useRef(null);
   const [isDropDownMenuOpen, setIsDropDownMenuOpen] = useState(false);
   const { isDarkMode, setIsDarkMode } = useContext(AppContext);
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
 
   function toggleDropDownMenu() {
     setIsDropDownMenuOpen((prevState) => !prevState);
@@ -90,13 +90,13 @@ const Navbar = () => {
             borderBottom: "3px solid #FF2625",
           }}
         >
-          Home
+          {t("navbar.home")}
         </Link>
         <a
           href="#exercises"
           style={{ textDecoration: "none", color: "#3A1212" }}
         >
-          Exercises
+          {t("navbar.exercises")}
         </a>
       </Stack>
       <Box
@@ -196,7 +196,7 @@ const Navbar = () => {
                 padding: "10px 20px",
               }}
             >
-              Profile
+              {t("navbar.profile")}
             </Link>
             <Link
               to="/settings"
@@ -206,7 +206,7 @@ const Navbar = () => {
                 padding: "10px 20px",
               }}
             >
-              Settings
+              {t("navbar.settings")}
             </Link>
             <Link
               to="/logout"
@@ -216,7 +216,7 @@ const Navbar = () => {
                 padding: "10px 20px",
               }}
             >
-              Login
+              {t("navbar.login")}
             </Link>
           </Stack>
         )}

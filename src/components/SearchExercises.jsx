@@ -3,10 +3,12 @@ import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 
 import { exerciseOptions, fetchData } from "../utils/fetchData.jsx";
 import HorizontalScrollbar from "./HorizontalScrollbar.jsx";
+import { useTranslation, Trans } from "react-i18next";
 
 const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
   const [search, setSearch] = useState("");
   const [bodyParts, setBodyParts] = useState([]);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchExercisesData = async () => {
@@ -51,7 +53,7 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
         mb="50px"
         textAlign="center"
       >
-        Awesome exercises you <br /> should know
+        <Trans i18nKey="searchExercises.title" components={{ br: <br /> }} />
       </Typography>
       <Box position="relative" mb="72px">
         <TextField
@@ -64,7 +66,7 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
           height="76px"
           value={search}
           onChange={(e) => setSearch(e.target.value.toLowerCase())}
-          placeholder="Search exercises"
+          placeholder={t("searchExercises.placeholder")}
           type="text"
         />
         <Button
@@ -81,7 +83,7 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
           }}
           onClick={handleSearch}
         >
-          Search
+          {t("searchExercises.button")}
         </Button>
       </Box>
       <Box sx={{ position: "relative", width: "100%", padding: "20px" }}>
