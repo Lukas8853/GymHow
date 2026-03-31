@@ -1,21 +1,50 @@
-import React from "react";
 import { useRef, useState, useEffect, useContext } from "react";
-import { Link } from "react-router-dom";
-import { Box, Stack } from "@mui/material"; //služi za organizaciju elemenata u stacku, može biti horizontalno ili vertikalno
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Box, Stack, Typography } from "@mui/material"; //služi za organizaciju elemenata u stacku, može biti horizontalno ili vertikalno
 import { useTranslation } from "react-i18next"; //služi za prevođenje teksta na različite jezike
 import SettingsIcon from "@mui/icons-material/Settings";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import FilterListOutlinedIcon from "@mui/icons-material/FilterListOutlined";
 
 import { AppContext } from "../AppContext";
-import Logo from "../assets/images/Logo.png";
-import zIndex from "@mui/material/styles/zIndex";
+import { exerciseOptions, fetchData } from "../utils/fetchData";
 
 const Navbar = () => {
   const dropDownMenuRef = useRef(null);
   const [isDropDownMenuOpen, setIsDropDownMenuOpen] = useState(false);
-  const { isDarkMode, setIsDarkMode } = useContext(AppContext);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const {
+    isDarkMode,
+    setIsDarkMode,
+    setExercises,
+    exerciseSortOrder,
+    setExerciseSortOrder,
+  } = useContext(AppContext);
   const { i18n, t } = useTranslation();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const isHomePage = location.pathname === "/";
+  const isProfilePage = location.pathname === "/Profile";
+  const isExercisesPage =
+    location.pathname === "/Exercises" ||
+    location.pathname.startsWith("/exercise/");
+
+  const pageTitle = isProfilePage
+    ? "Profile"
+    : isExercisesPage
+      ? "Exercises"
+      : "Home";
+
+  const navBackground = isProfilePage
+    ? "linear-gradient(180deg, #5ebb4c 0%, #ffffff 100%)"
+    : isExercisesPage
+      ? "linear-gradient(180deg, #c77829 0%, #ffffff 100%)"
+      : "linear-gradient(180deg, #a81b27 0%, #ffffff 100%)";
 
   function toggleDropDownMenu() {
     setIsDropDownMenuOpen((prevState) => !prevState);
@@ -27,14 +56,41 @@ const Navbar = () => {
     } else {
       i18n.changeLanguage("hr");
     }
-    console.log("Current language: ", i18n.language);
   }
 
   function toggleDarkMode() {
     setIsDarkMode((prevMode) => !prevMode);
     localStorage.setItem("isDarkMode", !isDarkMode);
-    console.log("Navbar > toggleDarkMode > isDarkMode:", !isDarkMode);
   }
+
+  const handleSearch = async () => {
+    if (searchInput.trim()) {
+      try {
+        const exercisesData = await fetchData(
+          `https://exercisedb.p.rapidapi.com/exercises/name/${searchInput}?limit=100&offset=0`,
+          exerciseOptions,
+        );
+        setExercises(exercisesData);
+        setSearchInput("");
+        setIsSearchOpen(false);
+        navigate("/");
+        setTimeout(() => {
+          const exercisesSection = document.getElementById("exercises");
+          if (exercisesSection) {
+            exercisesSection.scrollIntoView({ behavior: "smooth" });
+          }
+        }, 100);
+      } catch (error) {
+        console.error("Search error:", error);
+      }
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -43,6 +99,8 @@ const Navbar = () => {
         !dropDownMenuRef.current.contains(event.target)
       ) {
         setIsDropDownMenuOpen(false);
+        setIsSearchOpen(false);
+        setIsSortMenuOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -52,179 +110,277 @@ const Navbar = () => {
   }, []);
 
   return (
-    <Stack
-      direction="row"
-      justifyContent="space-around"
-      sx={{
-        gap: { sm: "122px", xs: "20px" },
-        marginTop: { sm: "32px", xs: "20px" },
-        justifyContent: "space-between",
-        alignItems: "center",
-      }}
-      px="20px"
-      ref={dropDownMenuRef}
-    >
-      <Link to="/">
-        <img
-          src={Logo}
-          alt="logo"
-          style={{
-            width: "48px",
-            height: "48px",
-            margin: "lg: 0 20px, xs: 0 10px",
-          }}
-        />
-      </Link>
-
+    <Box position="relative" ref={dropDownMenuRef}>
       <Stack
         direction="row"
-        gap={{ sm: "40px", xs: "20px" }}
-        fontSize="24px"
-        alignItems="flex-end"
-      >
-        <Link
-          to="/"
-          style={{
-            textDecoration: "none",
-            color: "#3A1212",
-            borderBottom: "3px solid #FF2625",
-          }}
-        >
-          {t("navbar.home")}
-        </Link>
-        <a
-          href="#exercises"
-          style={{ textDecoration: "none", color: "#3A1212" }}
-        >
-          {t("navbar.exercises")}
-        </a>
-      </Stack>
-      <Box
         sx={{
-          position: "relative",
-          marginLeft: "auto",
-          zIndex: 9999,
-          display: "flex",
+          gap: { sm: "40px", xs: "16px" },
+          justifyContent: "space-between",
           alignItems: "center",
+          px: { sm: 3, xs: 2 },
+          py: 1,
+          borderRadius: "16px",
+          background: navBackground,
         }}
       >
-        {isDarkMode ? (
-          <button
-            onClick={toggleDarkMode}
-            style={{
-              marginRight: "20px",
-              width: "48px",
-              height: "48px",
-              border: "none",
-              borderRadius: "8px",
-              backgroundColor: "black",
-              color: "white",
-              cursor: "pointer",
-              verticalAlign: "middle",
-            }}
+        <Stack direction="column" spacing={0.1} alignItems="flex-start">
+          <Typography
+            sx={{ fontSize: { xs: "20px", sm: "24px" }, fontWeight: 800 }}
           >
-            <DarkModeOutlinedIcon />
-          </button>
-        ) : (
-          <button
-            onClick={toggleDarkMode}
-            style={{
-              marginRight: "20px",
-              width: "48px",
-              height: "48px",
-              border: "none",
-              borderRadius: "8px",
-              backgroundColor: "black",
-              color: "white",
-              cursor: "pointer",
-              verticalAlign: "middle",
-            }}
-          >
-            <LightModeOutlinedIcon />
-          </button>
-        )}
-
-        <button
-          onClick={changeLanguage}
-          style={{
-            marginRight: "20px",
-            width: "48px",
-            height: "48px",
-            border: "none",
-            borderRadius: "8px",
-            backgroundColor: "#020202",
-            color: "#fff",
-            cursor: "pointer",
-            verticalAlign: "middle",
+            {pageTitle}
+          </Typography>
+        </Stack>
+        <Box
+          sx={{
+            position: "relative",
+            marginLeft: "auto",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
           }}
         >
-          {i18n.language === "hr" ? "EN" : "HR"}
-        </button>
+          {(isHomePage || isExercisesPage) && (
+            <Stack direction="row" spacing={1} alignItems="center">
+              {isExercisesPage && (
+                <Box sx={{ position: "relative" }}>
+                  <button
+                    onClick={() => {
+                      setIsSortMenuOpen((prev) => !prev);
+                      setIsSearchOpen(false);
+                    }}
+                    style={{
+                      width: "40px",
+                      height: "40px",
+                      border: "none",
+                      borderRadius: "10px",
+                      backgroundColor: "#020202",
+                      color: "#fff",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                    aria-label="Sort exercises"
+                    title={`Sort: ${exerciseSortOrder === "az" ? "A-Z" : "Z-A"}`}
+                  >
+                    <FilterListOutlinedIcon fontSize="small" />
+                  </button>
 
-        <button
-          onClick={toggleDropDownMenu}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
+                  {isSortMenuOpen && (
+                    <Stack
+                      direction="column"
+                      sx={{
+                        position: "absolute",
+                        top: "46px",
+                        right: 0,
+                        backgroundColor: "#fff",
+                        borderRadius: "10px",
+                        boxShadow: "0px 6px 16px rgba(0, 0, 0, 0.15)",
+                        p: "6px",
+                        minWidth: "150px",
+                        zIndex: 10000,
+                      }}
+                    >
+                      <button
+                        onClick={() => {
+                          setExerciseSortOrder("az");
+                          setIsSortMenuOpen(false);
+                        }}
+                        style={{
+                          height: "34px",
+                          border: "none",
+                          borderRadius: "8px",
+                          backgroundColor:
+                            exerciseSortOrder === "az" ? "#ffe9e9" : "#fff",
+                          color: "#1f1f1f",
+                          cursor: "pointer",
+                          textAlign: "left",
+                          padding: "0 10px",
+                        }}
+                      >
+                        Silazno (A-Z)
+                      </button>
+                      <button
+                        onClick={() => {
+                          setExerciseSortOrder("za");
+                          setIsSortMenuOpen(false);
+                        }}
+                        style={{
+                          height: "34px",
+                          border: "none",
+                          borderRadius: "8px",
+                          backgroundColor:
+                            exerciseSortOrder === "za" ? "#ffe9e9" : "#fff",
+                          color: "#1f1f1f",
+                          cursor: "pointer",
+                          textAlign: "left",
+                          padding: "0 10px",
+                        }}
+                      >
+                        Uzlazno (Z-A)
+                      </button>
+                    </Stack>
+                  )}
+                </Box>
+              )}
+
+              <button
+                onClick={() => {
+                  setIsSearchOpen((prev) => !prev);
+                  setIsSortMenuOpen(false);
+                }}
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  border: "none",
+                  borderRadius: "12px",
+                  backgroundColor: "#020202",
+                  color: "#fff",
+                  cursor: "pointer",
+                }}
+              >
+                <SearchOutlinedIcon />
+              </button>
+            </Stack>
+          )}
+
+          {isProfilePage && (
+            <button
+              onClick={toggleDropDownMenu}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
+              }}
+            >
+              <SettingsIcon
+                sx={{ fontSize: "48px", verticalAlign: "middle" }}
+              />
+            </button>
+          )}
+          {isProfilePage && isDropDownMenuOpen && (
+            <Stack
+              direction="column"
+              sx={{
+                position: "absolute",
+                top: "100%",
+                right: 0,
+                marginTop: "8px",
+                backgroundColor: "#fff",
+                borderRadius: "8px",
+                boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.15)",
+                padding: "8px 0",
+                minWidth: "180px",
+                zIndex: 1000,
+              }}
+            >
+              <button
+                onClick={toggleDarkMode}
+                style={{
+                  margin: "8px 12px 4px",
+                  height: "40px",
+                  border: "none",
+                  borderRadius: "8px",
+                  backgroundColor: "#020202",
+                  color: "#fff",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                }}
+              >
+                {isDarkMode ? (
+                  <DarkModeOutlinedIcon />
+                ) : (
+                  <LightModeOutlinedIcon />
+                )}
+                {isDarkMode ? "Dark" : "Light"}
+              </button>
+              <button
+                onClick={changeLanguage}
+                style={{
+                  margin: "4px 12px 8px",
+                  height: "40px",
+                  border: "none",
+                  borderRadius: "8px",
+                  backgroundColor: "#020202",
+                  color: "#fff",
+                  cursor: "pointer",
+                }}
+              >
+                {i18n.language === "hr" ? "EN" : "HR"}
+              </button>
+              <Link
+                to="/Profile"
+                style={{
+                  textDecoration: "none",
+                  color: "#3A1212",
+                  padding: "10px 20px",
+                }}
+              >
+                {t("navbar.profile")}
+              </Link>
+              <Link
+                to="/settings"
+                style={{
+                  textDecoration: "none",
+                  color: "#3A1212",
+                  padding: "10px 20px",
+                }}
+              >
+                {t("navbar.settings")}
+              </Link>
+              <Link
+                to="/logout"
+                style={{
+                  textDecoration: "none",
+                  color: "#3A1212",
+                  padding: "10px 20px",
+                }}
+              >
+                {t("navbar.login")}
+              </Link>
+            </Stack>
+          )}
+        </Box>
+      </Stack>
+
+      {isSearchOpen && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: "70px",
+            left: 0,
+            right: 0,
+            backgroundColor: "#fff",
+            padding: "16px",
+            borderRadius: "12px",
+            boxShadow: "0px 4px 12px rgba(0,0,0,0.15)",
+            zIndex: 9999,
           }}
+          onClick={(e) => e.stopPropagation()}
         >
-          <SettingsIcon sx={{ fontSize: "48px", verticalAlign: "middle" }} />
-        </button>
-        {isDropDownMenuOpen && (
-          <Stack
-            direction="column"
-            sx={{
-              position: "absolute",
-              top: "100%",
-              right: 0,
-              marginTop: "8px",
-              backgroundColor: "#fff",
+          <input
+            autoFocus
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value.toLowerCase())}
+            onKeyPress={handleKeyPress}
+            placeholder="Search exercises..."
+            style={{
+              width: "100%",
+              padding: "12px",
               borderRadius: "8px",
-              boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.15)",
-              padding: "8px 0",
-              minWidth: "180px",
-              zIndex: 1000,
+              border: "1px solid #ccc",
+              fontSize: "16px",
             }}
-          >
-            <Link
-              to="/profile"
-              style={{
-                textDecoration: "none",
-                color: "#3A1212",
-                padding: "10px 20px",
-              }}
-            >
-              {t("navbar.profile")}
-            </Link>
-            <Link
-              to="/settings"
-              style={{
-                textDecoration: "none",
-                color: "#3A1212",
-                padding: "10px 20px",
-              }}
-            >
-              {t("navbar.settings")}
-            </Link>
-            <Link
-              to="/logout"
-              style={{
-                textDecoration: "none",
-                color: "#3A1212",
-                padding: "10px 20px",
-              }}
-            >
-              {t("navbar.login")}
-            </Link>
-          </Stack>
-        )}
-      </Box>
-    </Stack>
+          />
+        </Box>
+      )}
+    </Box>
   );
 };
-
 export default Navbar;
 
 //9.linija -> Stack se koristi za organizaciju elemenata u horizontalnom smjeru (direction="row") i postavlja razmak između elemenata (gap) te marginu na vrhu (marginTop) ovisno o veličini ekrana (sm i xs)

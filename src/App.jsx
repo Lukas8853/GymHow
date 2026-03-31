@@ -8,6 +8,8 @@ import Home from "./pages/Home";
 import ExerciseDetail from "./pages/ExerciseDetail";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
+import Profile from "./components/Profile.jsx";
+import PageExercises from "./components/PageExercises";
 
 const App = () => {
   return (
@@ -17,6 +19,8 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/exercise/:id" element={<ExerciseDetail />} />
+        <Route path="/Profile" element={<Profile />} />
+        <Route path="/Exercises" element={<PageExercises />} />
       </Routes>
       <Footer />
     </Box>

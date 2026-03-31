@@ -1,13 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Box } from "@mui/material";
 
+import { AppContext } from "../AppContext";
 import HeroBanner from "../components/HeroBanner";
 import SearchExercises from "../components/SearchExercises";
 import Exercises from "../components/Exercises";
 
 const Home = () => {
   const [bodyPart, setBodyPart] = useState("all");
-  const [exercises, setExercises] = useState([]);
+  const { exercises, setExercises } = useContext(AppContext);
 
   return (
     <Box>

@@ -5,6 +5,11 @@ export const AppContext = createContext();
 export function AppContextProvider({ children }) {
   const [username, setUsername] = useState(null);
 
+  const [exercises, setExercises] = useState([]);
+  const [exerciseSortOrder, setExerciseSortOrder] = useState(() => {
+    return localStorage.getItem("exerciseSortOrder") || "az";
+  });
+
   const [favorites, setFavorites] = useState(() => {
     const storedFavorite = localStorage.getItem("favorites");
     console.log("AppContext > useState > storedFavorite:", storedFavorite);
@@ -49,6 +54,10 @@ export function AppContextProvider({ children }) {
     document.body.classList.toggle("dark", isDarkMode);
   }, [isDarkMode]);
 
+  useEffect(() => {
+    localStorage.setItem("exerciseSortOrder", exerciseSortOrder);
+  }, [exerciseSortOrder]);
+
   return (
     <AppContext.Provider
       value={{
@@ -58,6 +67,10 @@ export function AppContextProvider({ children }) {
         setUsername,
         favorites,
         toggleFavorite,
+        exercises,
+        setExercises,
+        exerciseSortOrder,
+        setExerciseSortOrder,
       }}
     >
       {children}

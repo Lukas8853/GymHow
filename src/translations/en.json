@@ -6,7 +6,11 @@
     "settings": "Settings",
     "login": "Login"
   },
-
+  "profile":{
+    "title":"My profile",
+    "favorites": "Favorites",
+    "noFavorites": "You have no favorite exercises yet."
+  },
   "heroBanner": {
     "fitnessClub": "Fitness Club",
     "title": "Sweat, smile <br /> and Repeat",

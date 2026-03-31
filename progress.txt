@@ -3,10 +3,12 @@
 //https://mui.com/material-ui/material-icons/?query=Favorite&theme=Outlined
 //https://www.flaticon.com/icons
 
+https://www.strengthlog.com/exercise-directory/
+https://www.muscleandstrength.com/exercises
+
 //https://www.youtube.com/watch?v=KBpoBc98BwM
 9:15
 1:06:00 
 1:21:00 -> provjeriti api
-KOJA PICKA METRINA NE RADI
 1:59:00
 2:30:09

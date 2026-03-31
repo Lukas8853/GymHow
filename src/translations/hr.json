@@ -6,6 +6,11 @@
     "settings": "Postavke",
     "login": "Prijava"
   },
+  "profile":{
+      "title":"Moj profil",
+      "favorites": "Omiljene vježbe",
+      "noFavorites": "Nemate omiljenje vježbe još."
+    },
   "heroBanner": {
   "fitnessClub": "Fitness Klub",
   "title": "Znoji se, nasmiješi se <br /> i ponovi",
