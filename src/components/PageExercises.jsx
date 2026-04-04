@@ -2,7 +2,12 @@ import React, { useContext, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Box, Stack, Typography } from "@mui/material";
 
-import { exerciseOptions, fetchData } from "../utils/fetchData";
+import {
+  exerciseOptions,
+  fetchData,
+  readCachedJson,
+  writeCachedJson,
+} from "../utils/fetchData";
 import placeholder from "../assets/images/placeholder.png";
 import Loader from "./Loader";
 import { AppContext } from "../AppContext";
@@ -15,7 +20,7 @@ const MIN_EXPECTED_FETCHED_ITEMS = 500;
 const PageExercises = () => {
   const [exercises, setExercises] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { exerciseSortOrder } = useContext(AppContext);
+  const { exerciseSortOrder, isDarkMode } = useContext(AppContext);
 
   useEffect(() => {
     const fetchAllExercises = async () => {
@@ -23,17 +28,14 @@ const PageExercises = () => {
 
       try {
         const cacheKey = "exercises_all_alphabet_v4";
-        const cachedExercises = localStorage.getItem(cacheKey);
+        const cachedExercises = readCachedJson(cacheKey, null);
 
-        if (cachedExercises) {
-          const parsedCache = JSON.parse(cachedExercises);
-          if (
-            Array.isArray(parsedCache) &&
-            parsedCache.length >= MIN_EXPECTED_CACHED_ITEMS
-          ) {
-            setExercises(parsedCache);
-            return;
-          }
+        if (
+          Array.isArray(cachedExercises) &&
+          cachedExercises.length >= MIN_EXPECTED_CACHED_ITEMS
+        ) {
+          setExercises(cachedExercises);
+          return;
         }
 
         const allExercises = [];
@@ -66,38 +68,17 @@ const PageExercises = () => {
           }
         }
 
-        // Fallback: neki planovi/kljucevi vracaju premalo na globalnom endpointu,
-        // pa dodatno skupljamo po bodyPart endpointima i spajamo bez duplikata.
-        if (allExercises.length < MIN_EXPECTED_FETCHED_ITEMS) {
-          const bodyParts = await fetchData(
-            "https://exercisedb.p.rapidapi.com/exercises/bodyPartList",
-            exerciseOptions,
-          );
-
-          if (Array.isArray(bodyParts)) {
-            for (const bodyPart of bodyParts) {
-              const bodyPartData = await fetchData(
-                `https://exercisedb.p.rapidapi.com/exercises/bodyPart/${bodyPart}?limit=500&offset=0`,
-                exerciseOptions,
-              );
-
-              if (!Array.isArray(bodyPartData)) {
-                continue;
-              }
-
-              bodyPartData.forEach((exercise) => {
-                if (!exercise?.id || seenIds.has(exercise.id)) {
-                  return;
-                }
-
-                seenIds.add(exercise.id);
-                allExercises.push(exercise);
-              });
-            }
-          }
-        }
-
-        localStorage.setItem(cacheKey, JSON.stringify(allExercises));
+        writeCachedJson(cacheKey, allExercises);
+        writeCachedJson(
+          "bodyParts_v1",
+          Array.from(
+            new Set(
+              allExercises
+                .map((exercise) => exercise?.bodyPart)
+                .filter(Boolean),
+            ),
+          ).sort((a, b) => a.localeCompare(b)),
+        );
         setExercises(allExercises);
       } catch (error) {
         console.error("Failed to fetch exercises:", error);
@@ -143,8 +124,7 @@ const PageExercises = () => {
       exerciseSortOrder === "za" ? b.localeCompare(a) : a.localeCompare(b),
     );
 
-    return orderedLetters
-      .map((letter) => ({ letter, items: grouped[letter] }));
+    return orderedLetters.map((letter) => ({ letter, items: grouped[letter] }));
   }, [exercises, exerciseSortOrder]);
 
   return (
@@ -180,7 +160,11 @@ const PageExercises = () => {
                       sx={{
                         p: "8px 12px",
                         borderRadius: "10px",
-                        "&:hover": { backgroundColor: "#f7f7f7" },
+                        backgroundColor: isDarkMode ? "#f1f1f1" : "transparent",
+                        color: "#111",
+                        "&:hover": {
+                          backgroundColor: isDarkMode ? "#e9e9e9" : "#f7f7f7",
+                        },
                       }}
                     >
                       <Box
@@ -196,7 +180,11 @@ const PageExercises = () => {
                           border: "1px solid #e7e7e7",
                         }}
                       />
-                      <Typography fontSize="18px" textTransform="capitalize">
+                      <Typography
+                        fontSize="18px"
+                        textTransform="capitalize"
+                        sx={{ color: "#111 !important" }}
+                      >
                         {exercise.name}
                       </Typography>
                     </Stack>

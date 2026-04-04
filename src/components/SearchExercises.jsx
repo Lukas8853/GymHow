@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 
-import { exerciseOptions, fetchData } from "../utils/fetchData.jsx";
+import {
+  exerciseOptions,
+  fetchData,
+  readCachedJson,
+  writeCachedJson,
+} from "../utils/fetchData.jsx";
 import HorizontalScrollbar from "./HorizontalScrollbar.jsx";
 import { useTranslation, Trans } from "react-i18next";
 
@@ -12,18 +17,62 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
 
   useEffect(() => {
     const fetchExercisesData = async () => {
+      const cachedBodyParts = readCachedJson("bodyParts_v1", null);
+      if (Array.isArray(cachedBodyParts) && cachedBodyParts.length > 0) {
+        setBodyParts(["all", ...cachedBodyParts]);
+        return;
+      }
+
+      const cachedExercises = readCachedJson("exercises_all_alphabet_v4", []);
+      if (Array.isArray(cachedExercises) && cachedExercises.length > 0) {
+        const derivedBodyParts = Array.from(
+          new Set(
+            cachedExercises
+              .map((exercise) => exercise?.bodyPart)
+              .filter(Boolean),
+          ),
+        ).sort((a, b) => a.localeCompare(b));
+
+        writeCachedJson("bodyParts_v1", derivedBodyParts);
+        setBodyParts(["all", ...derivedBodyParts]);
+        return;
+      }
+
       const bodyPartsData = await fetchData(
         "https://exercisedb.p.rapidapi.com/exercises/bodyPartList",
         exerciseOptions,
       );
-      setBodyParts(["all", ...bodyPartsData]);
+
+      if (Array.isArray(bodyPartsData)) {
+        const nextBodyParts = bodyPartsData.filter(Boolean);
+        writeCachedJson("bodyParts_v1", nextBodyParts);
+        setBodyParts(["all", ...nextBodyParts]);
+      } else {
+        // Keep the UI usable even when rate-limited by the API.
+        setBodyParts(["all"]);
+      }
     };
 
     fetchExercisesData();
   }, []);
-  
+
   const handleSearch = async () => {
     if (search) {
+      const cachedExercises = readCachedJson("exercises_all_alphabet_v4", []);
+      if (Array.isArray(cachedExercises) && cachedExercises.length > 0) {
+        const searchedExercises = cachedExercises.filter(
+          (exercise) =>
+            (exercise.name || "").toLowerCase().includes(search) ||
+            (exercise.target || "").toLowerCase().includes(search) ||
+            (exercise.equipment || "").toLowerCase().includes(search) ||
+            (exercise.bodyPart || "").toLowerCase().includes(search),
+        );
+
+        setSearch("");
+        setExercises(searchedExercises);
+        return;
+      }
+
       const exercisesData = await fetchData(
         /*`https://wger.de/api/v2/exercise/search/?term=${search}&language=english&format=json`,
         {},*/ //ovo radi i izbacuje sve rezultate, ali onda moramo mijenjati više stvari jer ne vraća bodypart i name nego value i data. Moramo prilagoditi da funkcionira
@@ -31,17 +80,22 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
         exerciseOptions,
       );
 
+      if (!Array.isArray(exercisesData)) {
+        setExercises([]);
+        return;
+      }
+
       //console.log("exercisesData", exercisesData); // dodaj ovo
       const searchedExercises = exercisesData.filter(
         (exercise) =>
-          exercise.name.toLowerCase().includes(search) ||
-          exercise.target.toLowerCase().includes(search) ||
-          exercise.equipment.toLowerCase().includes(search) ||
-          exercise.bodyPart.toLowerCase().includes(search),
+          (exercise.name || "").toLowerCase().includes(search) ||
+          (exercise.target || "").toLowerCase().includes(search) ||
+          (exercise.equipment || "").toLowerCase().includes(search) ||
+          (exercise.bodyPart || "").toLowerCase().includes(search),
       );
       //console.log("searchedExercises", searchedExercises); // i ovo
       setSearch("");
-      setExercises(exercisesData);
+      setExercises(searchedExercises);
     }
   };
 

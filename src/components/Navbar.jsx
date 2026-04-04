@@ -9,7 +9,7 @@ import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import FilterListOutlinedIcon from "@mui/icons-material/FilterListOutlined";
 
 import { AppContext } from "../AppContext";
-import { exerciseOptions, fetchData } from "../utils/fetchData";
+import { exerciseOptions, fetchData, readCachedJson } from "../utils/fetchData";
 
 const Navbar = () => {
   const dropDownMenuRef = useRef(null);
@@ -41,10 +41,16 @@ const Navbar = () => {
       : "Home";
 
   const navBackground = isProfilePage
-    ? "linear-gradient(180deg, #5ebb4c 0%, #ffffff 100%)"
+    ? isDarkMode
+      ? "linear-gradient(180deg, #3f8b31 0%, #111111 100%)"
+      : "linear-gradient(180deg, #5ebb4c 0%, #ffffff 100%)"
     : isExercisesPage
-      ? "linear-gradient(180deg, #c77829 0%, #ffffff 100%)"
-      : "linear-gradient(180deg, #a81b27 0%, #ffffff 100%)";
+      ? isDarkMode
+        ? "linear-gradient(180deg, #8f571d 0%, #111111 100%)"
+        : "linear-gradient(180deg, #c77829 0%, #ffffff 100%)"
+      : isDarkMode
+        ? "linear-gradient(180deg, #6e131a 0%, #111111 100%)"
+        : "linear-gradient(180deg, #a81b27 0%, #ffffff 100%)";
 
   function toggleDropDownMenu() {
     setIsDropDownMenuOpen((prevState) => !prevState);
@@ -65,12 +71,57 @@ const Navbar = () => {
 
   const handleSearch = async () => {
     if (searchInput.trim()) {
+      const normalizedSearch = searchInput.trim().toLowerCase();
+      const cachedExercises = readCachedJson("exercises_all_alphabet_v4", []);
+
+      if (Array.isArray(cachedExercises) && cachedExercises.length > 0) {
+        const searchedExercises = cachedExercises.filter(
+          (exercise) =>
+            (exercise.name || "").toLowerCase().includes(normalizedSearch) ||
+            (exercise.target || "").toLowerCase().includes(normalizedSearch) ||
+            (exercise.equipment || "")
+              .toLowerCase()
+              .includes(normalizedSearch) ||
+            (exercise.bodyPart || "").toLowerCase().includes(normalizedSearch),
+        );
+
+        setExercises(searchedExercises);
+        setSearchInput("");
+        setIsSearchOpen(false);
+        navigate("/");
+        setTimeout(() => {
+          const exercisesSection = document.getElementById("exercises");
+          if (exercisesSection) {
+            exercisesSection.scrollIntoView({ behavior: "smooth" });
+          }
+        }, 100);
+        return;
+      }
+
       try {
         const exercisesData = await fetchData(
-          `https://exercisedb.p.rapidapi.com/exercises/name/${searchInput}?limit=100&offset=0`,
+          `https://exercisedb.p.rapidapi.com/exercises/name/${normalizedSearch}?limit=100&offset=0`,
           exerciseOptions,
         );
-        setExercises(exercisesData);
+        const searchedExercises = Array.isArray(exercisesData)
+          ? exercisesData.filter(
+              (exercise) =>
+                (exercise.name || "")
+                  .toLowerCase()
+                  .includes(normalizedSearch) ||
+                (exercise.target || "")
+                  .toLowerCase()
+                  .includes(normalizedSearch) ||
+                (exercise.equipment || "")
+                  .toLowerCase()
+                  .includes(normalizedSearch) ||
+                (exercise.bodyPart || "")
+                  .toLowerCase()
+                  .includes(normalizedSearch),
+            )
+          : [];
+
+        setExercises(searchedExercises);
         setSearchInput("");
         setIsSearchOpen(false);
         navigate("/");
@@ -261,6 +312,7 @@ const Navbar = () => {
           )}
           {isProfilePage && isDropDownMenuOpen && (
             <Stack
+              className="profile-menu-surface"
               direction="column"
               sx={{
                 position: "absolute",
@@ -278,8 +330,9 @@ const Navbar = () => {
               <button
                 onClick={toggleDarkMode}
                 style={{
-                  margin: "8px 12px 4px",
+                  margin: "4px 12px",
                   height: "40px",
+                  width: "calc(100% - 24px)",
                   border: "none",
                   borderRadius: "8px",
                   backgroundColor: "#020202",
@@ -301,8 +354,9 @@ const Navbar = () => {
               <button
                 onClick={changeLanguage}
                 style={{
-                  margin: "4px 12px 8px",
+                  margin: "4px 12px",
                   height: "40px",
+                  width: "calc(100% - 24px)",
                   border: "none",
                   borderRadius: "8px",
                   backgroundColor: "#020202",
@@ -312,8 +366,28 @@ const Navbar = () => {
               >
                 {i18n.language === "hr" ? "EN" : "HR"}
               </button>
+              <button
+                onClick={() => {
+                  navigate("/Profile?edit=1");
+                  setIsDropDownMenuOpen(false);
+                }}
+                style={{
+                  margin: "4px 12px",
+                  height: "40px",
+                  width: "calc(100% - 24px)",
+                  border: "none",
+                  borderRadius: "8px",
+                  backgroundColor: "#020202",
+                  color: "#fff",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                }}
+              >
+                Edit profile
+              </button>
               <Link
                 to="/Profile"
+                className="profile-menu-link"
                 style={{
                   textDecoration: "none",
                   color: "#3A1212",
@@ -324,6 +398,7 @@ const Navbar = () => {
               </Link>
               <Link
                 to="/settings"
+                className="profile-menu-link"
                 style={{
                   textDecoration: "none",
                   color: "#3A1212",
@@ -334,6 +409,7 @@ const Navbar = () => {
               </Link>
               <Link
                 to="/logout"
+                className="profile-menu-link"
                 style={{
                   textDecoration: "none",
                   color: "#3A1212",

@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import { Link, useLocation } from "react-router-dom";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import FitnessCenterOutlinedIcon from "@mui/icons-material/FitnessCenterOutlined";
 import SportsGymnasticsOutlinedIcon from "@mui/icons-material/SportsGymnasticsOutlined";
+import { AppContext } from "../AppContext";
 
 const Footer = () => {
   const location = useLocation();
+  const { isDarkMode } = useContext(AppContext);
 
   const tabs = [
     {
@@ -51,9 +53,13 @@ const Footer = () => {
           height: "84px",
           px: 1,
           pb: "max(8px, env(safe-area-inset-bottom))",
-          background: "linear-gradient(180deg, #ffffff 0%, #fff3f4 100%)",
-          borderTop: "1px solid #f3d7da",
-          boxShadow: "0 -8px 20px rgba(255, 38, 37, 0.08)",
+          background: isDarkMode
+            ? "#0e0d0d"
+            : "linear-gradient(180deg, #ffffff 0%, #fff3f4 100%)",
+          borderTop: isDarkMode ? "1px solid #262626" : "1px solid #f3d7da",
+          boxShadow: isDarkMode
+            ? "0 -8px 20px rgba(0, 0, 0, 0.35)"
+            : "0 -8px 20px rgba(255, 38, 37, 0.08)",
           zIndex: 1200,
         }}
       >
@@ -71,12 +77,20 @@ const Footer = () => {
                 justifyContent="center"
                 spacing={0.4}
                 sx={{
-                  color: tab.isActive ? "#FF2625" : "#6f5d5d",
+                  color: tab.isActive
+                    ? isDarkMode
+                      ? "#58d6ff"
+                      : "#FF2625"
+                    : isDarkMode
+                      ? "#d1d1d1"
+                      : "#6f5d5d",
                   minHeight: "60px",
                   borderRadius: "14px",
                   transition: "all 0.2s ease",
                   backgroundColor: tab.isActive
-                    ? "rgba(255, 38, 37, 0.1)"
+                    ? isDarkMode
+                      ? "rgba(88, 214, 255, 0.16)"
+                      : "rgba(255, 38, 37, 0.1)"
                     : "transparent",
                 }}
               >

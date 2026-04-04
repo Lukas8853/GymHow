@@ -1,35 +1,57 @@
 import { createContext, useState, useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
 
 export const AppContext = createContext();
 
 export function AppContextProvider({ children }) {
-  const [user, setUser] = useState(null);         // Firebase Auth user
+  const [user, setUser] = useState(null); // Firebase Auth user
   const [userProfile, setUserProfile] = useState(null); // Firestore profil
   const [authLoading, setAuthLoading] = useState(true);
 
-  const [exercises, setExercises] = useState([]);
+  const [exercises, setExercisesState] = useState([]);
   const [exerciseSortOrder, setExerciseSortOrder] = useState(() => {
     return localStorage.getItem("exerciseSortOrder") || "az";
   });
 
   const [favorites, setFavorites] = useState(() => {
     const storedFavorite = localStorage.getItem("favorites");
-    return storedFavorite ? JSON.parse(storedFavorite) : [];
+    if (!storedFavorite) return [];
+
+    const parsed = JSON.parse(storedFavorite);
+    return Array.isArray(parsed) ? parsed.map((id) => String(id)) : [];
   });
 
   useEffect(() => {
     localStorage.setItem("favorites", JSON.stringify(favorites));
   }, [favorites]);
 
+  const persistFavoritesToFirestore = async (
+    nextFavorites,
+    targetUser = user,
+  ) => {
+    if (!targetUser) return;
+
+    try {
+      const userRef = doc(db, "users", targetUser.uid);
+      await setDoc(userRef, { favorite: nextFavorites }, { merge: true });
+    } catch (error) {
+      console.error("Failed to sync favorites to Firestore:", error);
+    }
+  };
+
   const toggleFavorite = (exerciseID) => {
-    setFavorites((previous) =>
-      previous.includes(exerciseID)
-        ? previous.filter((id) => id !== exerciseID)
-        : [...previous, exerciseID],
-    );
+    const normalizedExerciseID = String(exerciseID);
+
+    setFavorites((previous) => {
+      const nextFavorites = previous.includes(normalizedExerciseID)
+        ? previous.filter((id) => id !== normalizedExerciseID)
+        : [...previous, normalizedExerciseID];
+
+      persistFavoritesToFirestore(nextFavorites);
+      return nextFavorites;
+    });
   };
 
   const [isDarkModeStored] = useState(() => {
@@ -67,12 +89,35 @@ export function AppContextProvider({ children }) {
         const docRef = doc(db, "users", firebaseUser.uid);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setUserProfile(docSnap.data());
+          const profileData = docSnap.data();
+          setUserProfile(profileData);
+
+          if (Array.isArray(profileData.favorite)) {
+            setFavorites(profileData.favorite.map((id) => String(id)));
+          } else {
+            const localFavorites = JSON.parse(
+              localStorage.getItem("favorites") || "[]",
+            );
+            setFavorites(
+              Array.isArray(localFavorites)
+                ? localFavorites.map((id) => String(id))
+                : [],
+            );
+          }
         } else {
           setUserProfile(null);
+          setFavorites([]);
         }
       } else {
         setUserProfile(null);
+        const localFavorites = JSON.parse(
+          localStorage.getItem("favorites") || "[]",
+        );
+        setFavorites(
+          Array.isArray(localFavorites)
+            ? localFavorites.map((id) => String(id))
+            : [],
+        );
       }
       setAuthLoading(false);
     });
@@ -88,6 +133,18 @@ export function AppContextProvider({ children }) {
         setUserProfile(docSnap.data());
       }
     }
+  };
+
+  const setExercises = (nextExercises) => {
+    if (typeof nextExercises === "function") {
+      setExercisesState((previousExercises) => {
+        const computedValue = nextExercises(previousExercises);
+        return Array.isArray(computedValue) ? computedValue : [];
+      });
+      return;
+    }
+
+    setExercisesState(Array.isArray(nextExercises) ? nextExercises : []);
   };
 
   return (
