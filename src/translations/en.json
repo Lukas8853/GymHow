@@ -29,7 +29,14 @@
     "detail": {
        "addToFavorite": "Add to Favorites",
        "removeFromFavorite": "Remove from Favorites",
-       "description": "Exercises keep you strong. {{name}} is one of the best exercises to target your {{target}}. It will help you improve your mood and gain energy."
+       "description": "Exercises keep you strong. {{name}} is one of the best exercises to target your {{target}}. It will help you improve your mood and gain energy.",
+       "instructionsPrefix": "How to do {{name}}: {{instructions}}",
+       "dynamicDescriptions": {
+        "0": "{{name}} focuses on your {{target}} and is a great choice when you want steady progress with controlled form.",
+        "1": "Use {{name}} to challenge your {{target}} while building consistency. Keep your tempo smooth and your reps clean.",
+        "2": "{{name}} combines {{equipment}} work with focused {{target}} activation, making it useful for balanced strength sessions.",
+        "3": "For {{bodyPart}} development, {{name}} is a reliable option. Stay strict with technique and increase difficulty gradually."
+       }
     },
     "exerciseVideos": {
        "loading": "Loading...",

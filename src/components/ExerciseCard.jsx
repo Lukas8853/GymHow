@@ -3,12 +3,18 @@ import { Link } from "react-router-dom";
 import { Button, Stack, Typography } from "@mui/material/";
 
 import placeholder from "../assets/images/placeholder.png";
+import ExerciseImage from "./ExerciseImage";
 
 const ExerciseCard = ({ exercise }) => {
   console.log(exercise);
   return (
     <Link className="exercise-card" to={`/exercise/${exercise.id}`}>
-      <img src={exercise.gifUrl || placeholder} alt={exercise.name} loading="lazy" />
+      <ExerciseImage
+        exercise={exercise}
+        fallbackSrc={placeholder}
+        alt={exercise.name}
+        fetchRemoteImage={false}
+      />
       <Stack direction="row">
         <Button
           sx={{
@@ -36,13 +42,14 @@ const ExerciseCard = ({ exercise }) => {
         </Button>
       </Stack>
       <Typography
+        className="exercise-card-name-text"
         marginLeft="21px"
-        color="#000"
         fontWeight="bold"
         mt="11px"
         pb="10px"
         textTransform="capitalize"
         fontSize="22px"
+        sx={{ color: "#000 !important" }}
       >
         {exercise.name}
       </Typography>

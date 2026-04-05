@@ -9,7 +9,13 @@ import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import FilterListOutlinedIcon from "@mui/icons-material/FilterListOutlined";
 
 import { AppContext } from "../AppContext";
-import { exerciseOptions, fetchData, readCachedJson } from "../utils/fetchData";
+import {
+  EXERCISES_CACHE_KEY,
+  fetchAllExercises,
+  filterExercisesByQuery,
+  readCachedJson,
+  writeCachedJson,
+} from "../utils/fetchData";
 
 const Navbar = () => {
   const dropDownMenuRef = useRef(null);
@@ -69,71 +75,81 @@ const Navbar = () => {
     localStorage.setItem("isDarkMode", !isDarkMode);
   }
 
-  const handleSearch = async () => {
-    if (searchInput.trim()) {
-      const normalizedSearch = searchInput.trim().toLowerCase();
-      const cachedExercises = readCachedJson("exercises_all_alphabet_v4", []);
-
+  const clearSearch = () => {
+    if (isExercisesPage) {
+      navigate("/Exercises");
+    } else {
+      const cachedExercises = readCachedJson(EXERCISES_CACHE_KEY, []);
       if (Array.isArray(cachedExercises) && cachedExercises.length > 0) {
-        const searchedExercises = cachedExercises.filter(
-          (exercise) =>
-            (exercise.name || "").toLowerCase().includes(normalizedSearch) ||
-            (exercise.target || "").toLowerCase().includes(normalizedSearch) ||
-            (exercise.equipment || "")
-              .toLowerCase()
-              .includes(normalizedSearch) ||
-            (exercise.bodyPart || "").toLowerCase().includes(normalizedSearch),
-        );
-
-        setExercises(searchedExercises);
-        setSearchInput("");
-        setIsSearchOpen(false);
-        navigate("/");
-        setTimeout(() => {
-          const exercisesSection = document.getElementById("exercises");
-          if (exercisesSection) {
-            exercisesSection.scrollIntoView({ behavior: "smooth" });
-          }
-        }, 100);
-        return;
+        setExercises(cachedExercises);
       }
+      navigate("/");
+    }
 
-      try {
-        const exercisesData = await fetchData(
-          `https://exercisedb.p.rapidapi.com/exercises/name/${normalizedSearch}?limit=100&offset=0`,
-          exerciseOptions,
-        );
-        const searchedExercises = Array.isArray(exercisesData)
-          ? exercisesData.filter(
-              (exercise) =>
-                (exercise.name || "")
-                  .toLowerCase()
-                  .includes(normalizedSearch) ||
-                (exercise.target || "")
-                  .toLowerCase()
-                  .includes(normalizedSearch) ||
-                (exercise.equipment || "")
-                  .toLowerCase()
-                  .includes(normalizedSearch) ||
-                (exercise.bodyPart || "")
-                  .toLowerCase()
-                  .includes(normalizedSearch),
-            )
-          : [];
+    setSearchInput("");
+    setIsSearchOpen(false);
+    setIsSortMenuOpen(false);
+  };
 
-        setExercises(searchedExercises);
-        setSearchInput("");
-        setIsSearchOpen(false);
-        navigate("/");
-        setTimeout(() => {
-          const exercisesSection = document.getElementById("exercises");
-          if (exercisesSection) {
-            exercisesSection.scrollIntoView({ behavior: "smooth" });
-          }
-        }, 100);
-      } catch (error) {
-        console.error("Search error:", error);
+  const handleSearch = async () => {
+    const normalizedSearch = searchInput.trim().toLowerCase();
+
+    if (!normalizedSearch) {
+      clearSearch();
+      return;
+    }
+
+    if (isExercisesPage) {
+      navigate(`/Exercises?q=${encodeURIComponent(normalizedSearch)}`);
+      setSearchInput("");
+      setIsSearchOpen(false);
+      setIsSortMenuOpen(false);
+      return;
+    }
+
+    const cachedExercises = readCachedJson(EXERCISES_CACHE_KEY, []);
+
+    if (Array.isArray(cachedExercises) && cachedExercises.length > 0) {
+      const searchedExercises = filterExercisesByQuery(
+        cachedExercises,
+        normalizedSearch,
+      );
+
+      setExercises(searchedExercises);
+      setSearchInput("");
+      setIsSearchOpen(false);
+      navigate("/");
+      setTimeout(() => {
+        const exercisesSection = document.getElementById("exercises");
+        if (exercisesSection) {
+          exercisesSection.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+      return;
+    }
+
+    try {
+      const exercisesData = await fetchAllExercises();
+      if (Array.isArray(exercisesData) && exercisesData.length > 0) {
+        writeCachedJson(EXERCISES_CACHE_KEY, exercisesData);
       }
+      const searchedExercises = filterExercisesByQuery(
+        exercisesData,
+        normalizedSearch,
+      );
+
+      setExercises(searchedExercises);
+      setSearchInput("");
+      setIsSearchOpen(false);
+      navigate("/");
+      setTimeout(() => {
+        const exercisesSection = document.getElementById("exercises");
+        if (exercisesSection) {
+          exercisesSection.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    } catch (error) {
+      console.error("Search error:", error);
     }
   };
 
@@ -425,6 +441,7 @@ const Navbar = () => {
 
       {isSearchOpen && (
         <Box
+          className="search-panel"
           sx={{
             position: "absolute",
             top: "70px",
@@ -447,11 +464,39 @@ const Navbar = () => {
             style={{
               width: "100%",
               padding: "12px",
+              paddingRight: searchInput ? "44px" : "12px",
               borderRadius: "8px",
               border: "1px solid #ccc",
               fontSize: "16px",
             }}
           />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              aria-label="Clear search"
+              style={{
+                position: "absolute",
+                right: "26px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: "28px",
+                height: "28px",
+                border: "none",
+                borderRadius: "999px",
+                backgroundColor: "#020202",
+                color: "#fff",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "18px",
+                lineHeight: 1,
+              }}
+            >
+              ×
+            </button>
+          )}
         </Box>
       )}
     </Box>

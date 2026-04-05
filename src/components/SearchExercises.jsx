@@ -2,8 +2,11 @@ import React, { useEffect, useState } from "react";
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 
 import {
-  exerciseOptions,
-  fetchData,
+  BODYPARTS_CACHE_KEY,
+  EXERCISES_CACHE_KEY,
+  fetchAllExercises,
+  filterExercisesByQuery,
+  getBodyPartsFromExercises,
   readCachedJson,
   writeCachedJson,
 } from "../utils/fetchData.jsx";
@@ -17,35 +20,26 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
 
   useEffect(() => {
     const fetchExercisesData = async () => {
-      const cachedBodyParts = readCachedJson("bodyParts_v1", null);
+      const cachedBodyParts = readCachedJson(BODYPARTS_CACHE_KEY, null);
       if (Array.isArray(cachedBodyParts) && cachedBodyParts.length > 0) {
         setBodyParts(["all", ...cachedBodyParts]);
         return;
       }
 
-      const cachedExercises = readCachedJson("exercises_all_alphabet_v4", []);
+      const cachedExercises = readCachedJson(EXERCISES_CACHE_KEY, []);
       if (Array.isArray(cachedExercises) && cachedExercises.length > 0) {
-        const derivedBodyParts = Array.from(
-          new Set(
-            cachedExercises
-              .map((exercise) => exercise?.bodyPart)
-              .filter(Boolean),
-          ),
-        ).sort((a, b) => a.localeCompare(b));
+        const derivedBodyParts = getBodyPartsFromExercises(cachedExercises);
 
-        writeCachedJson("bodyParts_v1", derivedBodyParts);
+        writeCachedJson(BODYPARTS_CACHE_KEY, derivedBodyParts);
         setBodyParts(["all", ...derivedBodyParts]);
         return;
       }
 
-      const bodyPartsData = await fetchData(
-        "https://exercisedb.p.rapidapi.com/exercises/bodyPartList",
-        exerciseOptions,
-      );
-
-      if (Array.isArray(bodyPartsData)) {
-        const nextBodyParts = bodyPartsData.filter(Boolean);
-        writeCachedJson("bodyParts_v1", nextBodyParts);
+      const allExercises = await fetchAllExercises();
+      if (Array.isArray(allExercises) && allExercises.length > 0) {
+        const nextBodyParts = getBodyPartsFromExercises(allExercises);
+        writeCachedJson(EXERCISES_CACHE_KEY, allExercises);
+        writeCachedJson(BODYPARTS_CACHE_KEY, nextBodyParts);
         setBodyParts(["all", ...nextBodyParts]);
       } else {
         // Keep the UI usable even when rate-limited by the API.
@@ -57,46 +51,48 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
   }, []);
 
   const handleSearch = async () => {
-    if (search) {
-      const cachedExercises = readCachedJson("exercises_all_alphabet_v4", []);
+    const cachedExercises = readCachedJson(EXERCISES_CACHE_KEY, []);
+
+    if (!search.trim()) {
       if (Array.isArray(cachedExercises) && cachedExercises.length > 0) {
-        const searchedExercises = cachedExercises.filter(
-          (exercise) =>
-            (exercise.name || "").toLowerCase().includes(search) ||
-            (exercise.target || "").toLowerCase().includes(search) ||
-            (exercise.equipment || "").toLowerCase().includes(search) ||
-            (exercise.bodyPart || "").toLowerCase().includes(search),
+        setExercises(cachedExercises);
+        return;
+      }
+
+      const allExercises = await fetchAllExercises();
+      if (Array.isArray(allExercises) && allExercises.length > 0) {
+        writeCachedJson(EXERCISES_CACHE_KEY, allExercises);
+        writeCachedJson(
+          BODYPARTS_CACHE_KEY,
+          getBodyPartsFromExercises(allExercises),
         );
-
-        setSearch("");
-        setExercises(searchedExercises);
-        return;
+        setExercises(allExercises);
       }
+      return;
+    }
 
-      const exercisesData = await fetchData(
-        /*`https://wger.de/api/v2/exercise/search/?term=${search}&language=english&format=json`,
-        {},*/ //ovo radi i izbacuje sve rezultate, ali onda moramo mijenjati više stvari jer ne vraća bodypart i name nego value i data. Moramo prilagoditi da funkcionira
-        `https://exercisedb.p.rapidapi.com/exercises/name/${search}?limit=100&offset=0`,
-        exerciseOptions,
-      );
+    if (Array.isArray(cachedExercises) && cachedExercises.length > 0) {
+      const searchedExercises = filterExercisesByQuery(cachedExercises, search);
 
-      if (!Array.isArray(exercisesData)) {
-        setExercises([]);
-        return;
-      }
-
-      //console.log("exercisesData", exercisesData); // dodaj ovo
-      const searchedExercises = exercisesData.filter(
-        (exercise) =>
-          (exercise.name || "").toLowerCase().includes(search) ||
-          (exercise.target || "").toLowerCase().includes(search) ||
-          (exercise.equipment || "").toLowerCase().includes(search) ||
-          (exercise.bodyPart || "").toLowerCase().includes(search),
-      );
-      //console.log("searchedExercises", searchedExercises); // i ovo
       setSearch("");
       setExercises(searchedExercises);
+      return;
     }
+
+    const exercisesData = await fetchAllExercises();
+    if (!Array.isArray(exercisesData) || exercisesData.length === 0) {
+      setExercises([]);
+      return;
+    }
+
+    writeCachedJson(EXERCISES_CACHE_KEY, exercisesData);
+    writeCachedJson(
+      BODYPARTS_CACHE_KEY,
+      getBodyPartsFromExercises(exercisesData),
+    );
+    const searchedExercises = filterExercisesByQuery(exercisesData, search);
+    setSearch("");
+    setExercises(searchedExercises);
   };
 
   return (
@@ -140,7 +136,7 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
           {t("searchExercises.button")}
         </Button>
       </Box>
-      <Box sx={{ position: "relative", width: "100%", padding: "20px" }}>
+      <Box sx={{ position: "relative", width: "100%", px: { xs: 0.5, sm: 1 } }}>
         <HorizontalScrollbar
           data={bodyParts}
           bodyPart={bodyPart}

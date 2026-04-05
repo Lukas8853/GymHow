@@ -8,21 +8,32 @@ const ExerciseVideos = ({ exerciseVideos, name }) => {
   if (!exerciseVideos.length) return t("exerciseVideos.loading");
 
   return (
-    <Box sx={{ marginTop: { lg: "200px", xs: "20px" } }} padding="20px">
+    <Box
+      sx={{
+        marginTop: { lg: "200px", xs: "20px" },
+        marginBottom: { lg: "60px", xs: "36px" },
+      }}
+      padding="20px"
+    >
       <Typography variant="h3" marginBottom="33px">
         <Trans
           i18nKey="exerciseVideos.title"
           values={{ name }}
           components={{
-           highlight: <span style={{ color: "#ff2625", textTransform: "capitalize" }} />
-         }}
+            highlight: (
+              <span style={{ color: "#ff2625", textTransform: "capitalize" }} />
+            ),
+          }}
         />
       </Typography>
       <Stack
         justifyContent="flex-start"
         flexWrap="wrap"
         alignItems="center"
-        sx={{ flexDirection: { lg: "row", xs: "column" }, gap: { lg: "110px", xs: "0" } }}
+        sx={{
+          flexDirection: { lg: "row", xs: "column" },
+          gap: { lg: "110px", xs: "0" },
+        }}
       >
         {exerciseVideos?.slice(0, 3).map((item, index) => (
           <a

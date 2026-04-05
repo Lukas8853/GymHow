@@ -92,6 +92,14 @@ body {
     color: #9a9a9a !important;
   }
 
+  body.dark .exercise-name-text {
+    color: #111 !important;
+  }
+
+  body.dark .exercise-card-name-text {
+    color: #fff !important;
+  }
+
   body.dark input,
   body.dark textarea,
   body.dark select {

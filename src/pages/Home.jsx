@@ -11,7 +11,14 @@ const Home = () => {
   const { exercises, setExercises } = useContext(AppContext);
 
   return (
-    <Box>
+    <Box
+      sx={{
+        width: "100%",
+        maxWidth: "1488px",
+        mx: "auto",
+        px: { xs: 2, sm: 4, lg: 6 },
+      }}
+    >
       <HeroBanner />
       <SearchExercises
         setExercises={setExercises}

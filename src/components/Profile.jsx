@@ -20,7 +20,15 @@ import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, db, googleProvider } from "../firebase";
 import { AppContext } from "../AppContext";
 import { useTranslation } from "react-i18next";
-import { exerciseOptions, fetchData } from "../utils/fetchData";
+import {
+  EXERCISES_CACHE_KEY,
+  fetchAllExercises,
+  findExerciseById,
+  readCachedJson,
+  writeCachedJson,
+} from "../utils/fetchData";
+import ExerciseImage from "./ExerciseImage";
+import placeholder from "../assets/images/placeholder.png";
 import { useLocation, useNavigate } from "react-router-dom";
 import GoogleIcon from "@mui/icons-material/Google";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -700,9 +708,7 @@ const Profile = () => {
       try {
         const cachedMap = new Map();
 
-        const cachedGlobalExercises = localStorage.getItem(
-          "exercises_all_alphabet_v4",
-        );
+        const cachedGlobalExercises = localStorage.getItem(EXERCISES_CACHE_KEY);
         if (cachedGlobalExercises) {
           const parsedGlobal = JSON.parse(cachedGlobalExercises);
           if (Array.isArray(parsedGlobal)) {
@@ -790,19 +796,19 @@ const Profile = () => {
         });
         setLoadingFavorites(true);
 
-        let fetchedExercises = [];
-        fetchedExercises = await Promise.all(
-          idsToFetch.map((id) =>
-            fetchData(
-              `https://exercisedb.p.rapidapi.com/exercises/exercise/${id}`,
-              exerciseOptions,
-            ).catch(() => null),
-          ),
-        );
+        const cachedAllExercises = readCachedJson(EXERCISES_CACHE_KEY, []);
+        const allExercises =
+          Array.isArray(cachedAllExercises) && cachedAllExercises.length > 0
+            ? cachedAllExercises
+            : await fetchAllExercises();
 
-        const fetchedValid = fetchedExercises.filter(
-          (exercise) => exercise && exercise.id,
-        );
+        if (Array.isArray(allExercises) && allExercises.length > 0) {
+          writeCachedJson(EXERCISES_CACHE_KEY, allExercises);
+        }
+
+        const fetchedValid = idsToFetch
+          .map((favoriteId) => findExerciseById(allExercises, favoriteId))
+          .filter((exercise) => exercise && exercise.id);
 
         const combinedMap = new Map(localMap);
         fetchedValid.forEach((exercise) => {
@@ -1063,6 +1069,15 @@ const Profile = () => {
               <Box
                 key={exercise.id}
                 className="light-surface"
+                onClick={() => navigate(`/exercise/${exercise.id}`)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    navigate(`/exercise/${exercise.id}`);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
                 sx={{
                   display: "flex",
                   alignItems: "center",
@@ -1071,16 +1086,26 @@ const Profile = () => {
                   borderRadius: "16px",
                   padding: "12px",
                   border: "1px solid #f0f0f0",
+                  cursor: "pointer",
+                  transition: "transform 0.18s ease, box-shadow 0.18s ease",
+                  "&:hover": {
+                    transform: "translateY(-1px)",
+                    boxShadow: "0 6px 16px rgba(0, 0, 0, 0.12)",
+                  },
+                  "&:focus-visible": {
+                    outline: "2px solid #5ebb4c",
+                    outlineOffset: "2px",
+                  },
                 }}
               >
-                <Box
-                  component="img"
-                  src={exercise.gifUrl}
+                <ExerciseImage
+                  exercise={exercise}
+                  fallbackSrc={placeholder}
                   alt={exercise.name}
-                  loading="lazy"
-                  sx={{
-                    width: 70,
-                    height: 70,
+                  fetchRemoteImage={false}
+                  style={{
+                    width: "70px",
+                    height: "70px",
                     borderRadius: "10px",
                     objectFit: "cover",
                   }}

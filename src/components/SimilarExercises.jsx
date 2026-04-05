@@ -12,26 +12,31 @@ const SimilarExercises = ({
   const { t } = useTranslation();
 
   return (
-    <Box sx={{ marginTop: { lg: "100px", xs: "0" } }}>
+    <Box
+      sx={{
+        marginTop: { lg: "100px", xs: "0" },
+        mb: { lg: "80px", xs: "90px" },
+      }}
+    >
       <Typography variant="h3" marginBottom={5}>
         {t("similarExercises.targetSameMuscleGroup")}
       </Typography>
       <Stack direction="row" sx={{ padding: "2", position: "relative" }}>
-        {targetMuscleExercises.length ? 
+        {targetMuscleExercises.length ? (
           <HorizontalScrollbar data={targetMuscleExercises} />
-         :
+        ) : (
           <Loader />
-        }
+        )}
       </Stack>
       <Typography variant="h3" marginBottom={5} marginTop={5}>
         {t("similarExercises.exercisesSameEquipment")}
       </Typography>
       <Stack direction="row" sx={{ padding: "2", position: "relative" }}>
-        {equipmentMuscleExercises.length ? 
+        {equipmentMuscleExercises.length ? (
           <HorizontalScrollbar data={equipmentMuscleExercises} />
-         :
+        ) : (
           <Loader />
-        }
+        )}
       </Stack>
     </Box>
   );

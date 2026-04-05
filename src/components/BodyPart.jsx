@@ -1,5 +1,6 @@
-import React from "react";
-import { Stack, Typography } from "@mui/material";
+import React, { useContext } from "react";
+import { Box, Stack, Typography } from "@mui/material";
+import { AppContext } from "../AppContext";
 
 import Icon from "../assets/icons/gym.png";
 import All from "../assets/icons/bodyParts/FullBody.png";
@@ -16,6 +17,7 @@ import Waist from "../assets/icons/bodyParts/waist.png";
 import { useTranslation } from "react-i18next";
 const BodyPart = ({ item, setBodyPart, bodyPart }) => {
   const { t } = useTranslation();
+  const { isDarkMode } = useContext(AppContext);
   return (
     <Stack
       type="button"
@@ -36,33 +38,45 @@ const BodyPart = ({ item, setBodyPart, bodyPart }) => {
         window.scrollTo({ top: 1800, left: 100, behavior: "smooth" });
       }}
     >
-      <img
-        src={
-          item === "all"
-            ? All
-            : item === "back"
-              ? Back
-              : item === "cardio"
-                ? Cardio
-                : item === "chest"
-                  ? Chest
-                  : item === "lower arms"
-                    ? LowerArms
-                    : item === "lower legs"
-                      ? LowerLegs
-                      : item === "neck"
-                        ? Neck
-                        : item === "shoulders"
-                          ? Shoulders
-                          : item === "upper arms"
-                            ? UpperArms
-                            : item === "upper legs"
-                              ? UpperLegs
-                              : Waist
-        } //ako je item all onda se stavi All, ako je back onda se stavi Back itd.
-        alt={item}
-        style={{ width: "60px", height: "60px" }}
-      />
+      <Box
+        sx={{
+          width: "96px",
+          height: "96px",
+          borderRadius: "50%",
+          backgroundColor: isDarkMode ? "#ffffff" : "transparent",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <img
+          src={
+            item === "all"
+              ? All
+              : item === "back"
+                ? Back
+                : item === "cardio"
+                  ? Cardio
+                  : item === "chest"
+                    ? Chest
+                    : item === "lower arms"
+                      ? LowerArms
+                      : item === "lower legs"
+                        ? LowerLegs
+                        : item === "neck"
+                          ? Neck
+                          : item === "shoulders"
+                            ? Shoulders
+                            : item === "upper arms"
+                              ? UpperArms
+                              : item === "upper legs"
+                                ? UpperLegs
+                                : Waist
+          } //ako je item all onda se stavi All, ako je back onda se stavi Back itd.
+          alt={item}
+          style={{ width: "68px", height: "68px" }}
+        />
+      </Box>
       <Typography
         fontSize="24px"
         fontWeight="bold"

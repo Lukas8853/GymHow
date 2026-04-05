@@ -1,8 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import Pagination from "@mui/material/Pagination";
 import { Box, Stack, Typography } from "@mui/material/";
 
-import { exerciseOptions, fetchData } from "../utils/fetchData";
+import {
+  EXERCISES_CACHE_KEY,
+  fetchAllExercises,
+  readCachedJson,
+  writeCachedJson,
+} from "../utils/fetchData";
+import { AppContext } from "../AppContext";
 import ExerciseCard from "./ExerciseCard";
 import { useTranslation } from "react-i18next";
 
@@ -10,6 +16,7 @@ const Exercises = ({ exercises, setExercises, bodyPart }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const exercisesPerPage = 4; //broj vježbi koje se prikazuju na jednoj stranici
   const { t } = useTranslation();
+  const { isDarkMode } = useContext(AppContext);
 
   const indexOfLastExercise = currentPage * exercisesPerPage;
   const indexOfFirstExercise = indexOfLastExercise - exercisesPerPage;
@@ -27,31 +34,31 @@ const Exercises = ({ exercises, setExercises, bodyPart }) => {
   useEffect(() => {
     //funkcija za dohvaćanje vježbi, ovisno o tome koji bodyPart je odabran
     const fetchExercisesData = async () => {
-      const cachedExercises = localStorage.getItem(`exercises_${bodyPart}`);
-      if (cachedExercises) {
-        setExercises(JSON.parse(cachedExercises));
+      const cachedAllExercises = readCachedJson(EXERCISES_CACHE_KEY, []);
+      const allExercises =
+        Array.isArray(cachedAllExercises) && cachedAllExercises.length > 0
+          ? cachedAllExercises
+          : await fetchAllExercises();
+
+      if (!Array.isArray(allExercises)) {
+        setExercises([]);
         return;
-      } //ako su vježbe već dohvaćene i spremljene u localStorage, onda se one koriste umjesto da se ponovo dohvaćaju s API-ja
-      // tako možemo smanjiti broj API poziva i ubrzati učitavanje vježbi
-
-      let exercisesData = [];
-
-      if (bodyPart === "all") {
-        exercisesData = await fetchData(
-          "https://exercisedb.p.rapidapi.com/exercises",
-          exerciseOptions,
-        ); //ako je bodyPart all onda se sve ispise
-      } else {
-        exercisesData = await fetchData(
-          `https://exercisedb.p.rapidapi.com/exercises/bodyPart/${bodyPart}`,
-          exerciseOptions,
-        ); //ako nije all onda se ispise samo taj bodyPart
       }
 
-      localStorage.setItem(
-        `exercises_${bodyPart}`,
-        JSON.stringify(exercisesData),
-      );
+      if (allExercises.length > 0) {
+        writeCachedJson(EXERCISES_CACHE_KEY, allExercises);
+      }
+
+      const normalizedBodyPart = String(bodyPart || "").toLowerCase();
+      const exercisesData =
+        normalizedBodyPart === "all"
+          ? allExercises
+          : allExercises.filter(
+              (exercise) =>
+                String(exercise?.bodyPart || "").toLowerCase() ===
+                normalizedBodyPart,
+            );
+
       setExercises(exercisesData);
     };
     fetchExercisesData();
@@ -83,6 +90,17 @@ const Exercises = ({ exercises, setExercises, bodyPart }) => {
             page={currentPage}
             onChange={paginate}
             size="large"
+            sx={{
+              "& .MuiPaginationItem-root": {
+                color: isDarkMode ? "#ffffff" : "#000000",
+              },
+              "& .MuiPaginationItem-root.Mui-selected": {
+                color: isDarkMode ? "#ffffff" : "#000000",
+                backgroundColor: isDarkMode
+                  ? "rgba(255, 255, 255, 0.12)"
+                  : "rgba(0, 0, 0, 0.08)",
+              },
+            }}
           />
         )}
       </Stack>

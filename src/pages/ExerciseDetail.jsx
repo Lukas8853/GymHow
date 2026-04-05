@@ -3,9 +3,12 @@ import { useParams } from "react-router-dom";
 import { Box } from "@mui/material";
 
 import {
-  exerciseOptions,
+  EXERCISES_CACHE_KEY,
+  fetchAllExercises,
   fetchData,
+  findExerciseById,
   readCachedJson,
+  writeCachedJson,
   youtubeOptions,
 } from "../utils/fetchData";
 import Detail from "../components/Detail";
@@ -21,27 +24,23 @@ const ExerciseDetail = () => {
 
   useEffect(() => {
     const fetchExercisesData = async () => {
-      const exerciseDbUrl = "https://exercisedb.p.rapidapi.com";
       const youtubeSearchUrl =
         "https://youtube-search-and-download.p.rapidapi.com";
 
-      const cachedExercises = readCachedJson("exercises_all_alphabet_v4", []);
-      const cachedExerciseDetail = Array.isArray(cachedExercises)
-        ? cachedExercises.find((exercise) => String(exercise.id) === String(id))
-        : null;
+      const cachedExercises = readCachedJson(EXERCISES_CACHE_KEY, []);
+      const allExercises =
+        Array.isArray(cachedExercises) && cachedExercises.length > 0
+          ? cachedExercises
+          : await fetchAllExercises();
 
-      if (cachedExerciseDetail) {
-        setExerciseDetail(cachedExerciseDetail);
+      if (Array.isArray(allExercises) && allExercises.length > 0) {
+        writeCachedJson(EXERCISES_CACHE_KEY, allExercises);
       }
 
-      const exerciseDetailData = cachedExerciseDetail
-        ? cachedExerciseDetail
-        : await fetchData(
-            `${exerciseDbUrl}/exercises/exercise/${id}`,
-            exerciseOptions,
-          );
+      const exerciseDetailData = findExerciseById(allExercises, id);
 
       if (!exerciseDetailData) {
+        setExerciseDetail({});
         setExerciseVideos([]);
         setTargetMuscleExercises([]);
         setEquipmentMuscleExercises([]);
@@ -60,20 +59,28 @@ const ExerciseDetail = () => {
           : [],
       );
 
-      const targetMuscleExercisesData = await fetchData(
-        `${exerciseDbUrl}/exercises/target/${exerciseDetailData.target}`,
-        exerciseOptions,
-      );
+      const targetMuscleExercisesData = Array.isArray(allExercises)
+        ? allExercises.filter(
+            (exercise) =>
+              exercise.id !== exerciseDetailData.id &&
+              String(exercise?.target || "") ===
+                String(exerciseDetailData?.target || ""),
+          )
+        : [];
       setTargetMuscleExercises(
         Array.isArray(targetMuscleExercisesData)
           ? targetMuscleExercisesData
           : [],
       );
 
-      const equipmentMuscleExercisesData = await fetchData(
-        `${exerciseDbUrl}/exercises/equipment/${exerciseDetailData.equipment}`,
-        exerciseOptions,
-      );
+      const equipmentMuscleExercisesData = Array.isArray(allExercises)
+        ? allExercises.filter(
+            (exercise) =>
+              exercise.id !== exerciseDetailData.id &&
+              String(exercise?.equipment || "") ===
+                String(exerciseDetailData?.equipment || ""),
+          )
+        : [];
       setEquipmentMuscleExercises(
         Array.isArray(equipmentMuscleExercisesData)
           ? equipmentMuscleExercisesData
@@ -85,7 +92,7 @@ const ExerciseDetail = () => {
   }, [id]);
 
   return (
-    <Box>
+    <Box sx={{ pb: { lg: "140px", xs: "120px" } }}>
       <Detail exerciseDetail={exerciseDetail} />
       <ExerciseVideos
         exerciseVideos={exerciseVideos}

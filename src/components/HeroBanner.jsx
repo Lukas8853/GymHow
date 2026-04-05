@@ -8,7 +8,7 @@ const HeroBanner = () => {
 
   return (
     <Box
-      sx={{ mt: { lg: "212px", xs: "70px" }, ml: { sm: "50px" } }}
+      sx={{ mt: { lg: "212px", xs: "70px" } }}
       position="relative"
       padding="20px"
     >
@@ -21,7 +21,7 @@ const HeroBanner = () => {
         marginBottom="23px"
         mt="30px"
       >
-        <Trans i18nKey="heroBanner.title" components={{ br: <br /> }} /> 
+        <Trans i18nKey="heroBanner.title" components={{ br: <br /> }} />
       </Typography>
       <Typography fontSize="22px" lineHeight="35px" marginBottom={4}>
         {t("heroBanner.subtitle")}

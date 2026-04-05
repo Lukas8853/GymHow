@@ -13,7 +13,7 @@
     },
   "heroBanner": {
   "fitnessClub": "Fitness Klub",
-  "title": "Znoji se, nasmiješi se <br /> i ponovi",
+  "title": "Znoji se, nasmiješi <br /> i ponovi",
   "subtitle": "Pogledaj najučinkovitije vježbe",
   "button": "Istraži vježbe",
   "watermark": "Vježba"
@@ -29,7 +29,14 @@
     "detail": {
     "addToFavorite": "Dodaj u omiljeno",
     "removeFromFavorite": "Ukloni iz omiljenih",
-    "description": "Vježbe te čine jačim. {{name}} je jedna od najboljih vježbi za {{target}}. Pomoći će ti poboljšati raspoloženje i dobiti energiju."
+    "description": "Vježbe te čine jačim. {{name}} je jedna od najboljih vježbi za {{target}}. Pomoći će ti poboljšati raspoloženje i dobiti energiju.",
+    "instructionsPrefix": "Kako izvesti vježbu {{name}}: {{instructions}}",
+    "dynamicDescriptions": {
+      "0": "{{name}} je usmjerena na {{target}} i odličan je izbor za siguran napredak uz kontroliranu tehniku.",
+      "1": "Uz vježbu {{name}} možeš kvalitetno aktivirati {{target}} i graditi kontinuitet treninga čistim ponavljanjima.",
+      "2": "{{name}} kombinira rad s opremom {{equipment}} i fokus na {{target}}, pa je dobar dodatak uravnoteženom treningu snage.",
+      "3": "Za razvoj mišićne skupine {{bodyPart}}, {{name}} je pouzdana opcija. Drži pravilnu tehniku i postupno povećavaj opterećenje."
+    }
     },
     "exerciseVideos": {
     "loading": "Učitavanje...",

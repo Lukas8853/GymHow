@@ -1,34 +1,43 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Box, Stack, Typography } from "@mui/material";
+import Pagination from "@mui/material/Pagination";
 
 import {
-  exerciseOptions,
-  fetchData,
+  BODYPARTS_CACHE_KEY,
+  EXERCISES_CACHE_KEY,
+  fetchAllExercises,
+  filterExercisesByQuery,
+  getBodyPartsFromExercises,
   readCachedJson,
   writeCachedJson,
 } from "../utils/fetchData";
 import placeholder from "../assets/images/placeholder.png";
 import Loader from "./Loader";
 import { AppContext } from "../AppContext";
+import ExerciseImage from "./ExerciseImage";
 
-const PAGE_LIMIT = 100;
-const MAX_OFFSET = 2000;
 const MIN_EXPECTED_CACHED_ITEMS = 200;
-const MIN_EXPECTED_FETCHED_ITEMS = 500;
+const EXERCISES_PER_PAGE = 25;
 
 const PageExercises = () => {
   const [exercises, setExercises] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const { exerciseSortOrder, isDarkMode } = useContext(AppContext);
+  const location = useLocation();
+
+  const searchQuery = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return (params.get("q") || "").trim().toLowerCase();
+  }, [location.search]);
 
   useEffect(() => {
-    const fetchAllExercises = async () => {
+    const loadExercises = async () => {
       setIsLoading(true);
 
       try {
-        const cacheKey = "exercises_all_alphabet_v4";
-        const cachedExercises = readCachedJson(cacheKey, null);
+        const cachedExercises = readCachedJson(EXERCISES_CACHE_KEY, null);
 
         if (
           Array.isArray(cachedExercises) &&
@@ -38,46 +47,16 @@ const PageExercises = () => {
           return;
         }
 
-        const allExercises = [];
-        const seenIds = new Set();
-
-        for (let offset = 0; offset <= MAX_OFFSET; offset += PAGE_LIMIT) {
-          const pageData = await fetchData(
-            `https://exercisedb.p.rapidapi.com/exercises?limit=${PAGE_LIMIT}&offset=${offset}`,
-            exerciseOptions,
-          );
-
-          if (!Array.isArray(pageData) || pageData.length === 0) {
-            break;
-          }
-
-          let addedInThisPage = 0;
-
-          pageData.forEach((exercise) => {
-            if (!exercise?.id || seenIds.has(exercise.id)) {
-              return;
-            }
-
-            seenIds.add(exercise.id);
-            allExercises.push(exercise);
-            addedInThisPage += 1;
-          });
-
-          if (pageData.length < PAGE_LIMIT || addedInThisPage === 0) {
-            break;
-          }
+        const allExercises = await fetchAllExercises();
+        if (!Array.isArray(allExercises)) {
+          setExercises([]);
+          return;
         }
 
-        writeCachedJson(cacheKey, allExercises);
+        writeCachedJson(EXERCISES_CACHE_KEY, allExercises);
         writeCachedJson(
-          "bodyParts_v1",
-          Array.from(
-            new Set(
-              allExercises
-                .map((exercise) => exercise?.bodyPart)
-                .filter(Boolean),
-            ),
-          ).sort((a, b) => a.localeCompare(b)),
+          BODYPARTS_CACHE_KEY,
+          getBodyPartsFromExercises(allExercises),
         );
         setExercises(allExercises);
       } catch (error) {
@@ -87,15 +66,27 @@ const PageExercises = () => {
       }
     };
 
-    fetchAllExercises();
+    loadExercises();
   }, []);
 
-  const groupedExercises = useMemo(() => {
+  const filteredExercises = useMemo(() => {
     if (!Array.isArray(exercises)) {
       return [];
     }
 
-    const sortedExercises = [...exercises].sort((a, b) =>
+    if (!searchQuery) {
+      return exercises;
+    }
+
+    return filterExercisesByQuery(exercises, searchQuery);
+  }, [exercises, searchQuery]);
+
+  const groupedExercises = useMemo(() => {
+    if (!Array.isArray(filteredExercises)) {
+      return [];
+    }
+
+    const sortedExercises = [...filteredExercises].sort((a, b) =>
       (a.name || "").localeCompare(b.name || "", undefined, {
         sensitivity: "base",
       }),
@@ -125,7 +116,61 @@ const PageExercises = () => {
     );
 
     return orderedLetters.map((letter) => ({ letter, items: grouped[letter] }));
-  }, [exercises, exerciseSortOrder]);
+  }, [filteredExercises, exerciseSortOrder]);
+
+  const groupedExercisePages = useMemo(() => {
+    const pages = [];
+    let currentPageGroups = [];
+    let remainingSlots = EXERCISES_PER_PAGE;
+
+    groupedExercises.forEach((group) => {
+      let groupItems = Array.isArray(group.items) ? [...group.items] : [];
+
+      while (groupItems.length > 0) {
+        if (remainingSlots === 0) {
+          pages.push(currentPageGroups);
+          currentPageGroups = [];
+          remainingSlots = EXERCISES_PER_PAGE;
+        }
+
+        const itemsToTake = Math.min(groupItems.length, remainingSlots);
+        const itemChunk = groupItems.slice(0, itemsToTake);
+        groupItems = groupItems.slice(itemsToTake);
+
+        currentPageGroups.push({
+          letter: group.letter,
+          items: itemChunk,
+        });
+
+        remainingSlots -= itemsToTake;
+      }
+    });
+
+    if (currentPageGroups.length > 0) {
+      pages.push(currentPageGroups);
+    }
+
+    return pages.length > 0 ? pages : [[]];
+  }, [groupedExercises]);
+
+  const totalPages = groupedExercisePages.length;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [exerciseSortOrder, searchQuery]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const paginatedGroups = groupedExercisePages[currentPage - 1] || [];
+
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <Box mt="50px" p="20px" pb="120px">
@@ -133,14 +178,14 @@ const PageExercises = () => {
         Exercises {exerciseSortOrder === "za" ? "Z-A" : "A-Z"}
       </Typography>
       <Typography variant="body1" color="text.secondary" mb="20px">
-        Total exercises: {exercises.length}
+        Total exercises: {filteredExercises.length}
       </Typography>
 
       {isLoading ? (
         <Loader />
       ) : (
         <Stack gap="28px">
-          {groupedExercises.map((group) => (
+          {paginatedGroups.map((group) => (
             <Box key={group.letter}>
               <Typography variant="h4" fontWeight={700} mb="14px">
                 {group.letter}
@@ -167,12 +212,12 @@ const PageExercises = () => {
                         },
                       }}
                     >
-                      <Box
-                        component="img"
-                        src={exercise.gifUrl || placeholder}
+                      <ExerciseImage
+                        exercise={exercise}
+                        fallbackSrc={placeholder}
                         alt={exercise.name}
-                        loading="lazy"
-                        sx={{
+                        fetchRemoteImage={false}
+                        style={{
                           width: "52px",
                           height: "52px",
                           borderRadius: "8px",
@@ -181,6 +226,7 @@ const PageExercises = () => {
                         }}
                       />
                       <Typography
+                        className="exercise-name-text"
                         fontSize="18px"
                         textTransform="capitalize"
                         sx={{ color: "#111 !important" }}
@@ -193,6 +239,30 @@ const PageExercises = () => {
               </Stack>
             </Box>
           ))}
+
+          {totalPages > 1 && (
+            <Stack mt="24px" alignItems="center">
+              <Pagination
+                color="standard"
+                shape="rounded"
+                count={totalPages}
+                page={currentPage}
+                onChange={handlePageChange}
+                size="large"
+                sx={{
+                  "& .MuiPaginationItem-root": {
+                    color: isDarkMode ? "#ffffff" : "#000000",
+                  },
+                  "& .MuiPaginationItem-root.Mui-selected": {
+                    color: isDarkMode ? "#ffffff" : "#000000",
+                    backgroundColor: isDarkMode
+                      ? "rgba(255, 255, 255, 0.12)"
+                      : "rgba(0, 0, 0, 0.08)",
+                  },
+                }}
+              />
+            </Stack>
+          )}
         </Stack>
       )}
     </Box>
