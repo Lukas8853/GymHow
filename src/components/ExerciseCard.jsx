@@ -13,7 +13,6 @@ const ExerciseCard = ({ exercise }) => {
         exercise={exercise}
         fallbackSrc={placeholder}
         alt={exercise.name}
-        fetchRemoteImage={false}
       />
       <Stack direction="row">
         <Button

@@ -216,7 +216,6 @@ const PageExercises = () => {
                         exercise={exercise}
                         fallbackSrc={placeholder}
                         alt={exercise.name}
-                        fetchRemoteImage={false}
                         style={{
                           width: "52px",
                           height: "52px",

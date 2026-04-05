@@ -23,6 +23,21 @@ export const animationOptions = {
 export const EXERCISES11_BASE_URL = "https://exercises11.p.rapidapi.com";
 export const EXERCISES_CACHE_KEY = "exercises_all_alphabet_v5";
 export const BODYPARTS_CACHE_KEY = "bodyParts_v2";
+export const API_RATE_LIMIT_UNTIL_KEY = "api_rate_limited_until";
+
+const markApiRateLimited = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const untilTimestamp = Date.now() + 3 * 60 * 1000;
+  try {
+    localStorage.setItem(API_RATE_LIMIT_UNTIL_KEY, String(untilTimestamp));
+    window.dispatchEvent(new Event("gymhow-api-rate-limit"));
+  } catch {
+    // Ignore localStorage failures.
+  }
+};
 
 const safeParseJson = (value) => {
   try {
@@ -64,6 +79,7 @@ export const fetchData = async (url, options) => {
 
   if (!response.ok) {
     if (response.status === 429) {
+      markApiRateLimited();
       return null;
     }
 
@@ -140,7 +156,55 @@ export const getExerciseAnimationUrl = (exerciseId) => {
 
 const animationBlobUrlCache = new Map();
 const animationRequestCache = new Map();
-const animationFailedCache = new Set();
+const animationFailedCache = new Map();
+const ANIMATION_FAILED_RETRY_MS = 10 * 60 * 1000;
+const ANIMATION_CACHE_NAME = "gymhow-exercise-animations-v1";
+
+const canUseBrowserCache = () =>
+  typeof window !== "undefined" && typeof window.caches !== "undefined";
+
+const readAnimationBlobFromPersistentCache = async (cacheKey, animationUrl) => {
+  if (!canUseBrowserCache()) {
+    return null;
+  }
+
+  try {
+    const cache = await window.caches.open(ANIMATION_CACHE_NAME);
+    const cachedResponse = await cache.match(animationUrl);
+    if (!cachedResponse) {
+      return null;
+    }
+
+    const cachedBlob = await cachedResponse.blob();
+    if (!cachedBlob || !cachedBlob.type.startsWith("image/")) {
+      return null;
+    }
+
+    const blobUrl = URL.createObjectURL(cachedBlob);
+    animationBlobUrlCache.set(cacheKey, blobUrl);
+    return blobUrl;
+  } catch {
+    return null;
+  }
+};
+
+const writeAnimationBlobToPersistentCache = async (animationUrl, blob) => {
+  if (!canUseBrowserCache()) {
+    return;
+  }
+
+  try {
+    const cache = await window.caches.open(ANIMATION_CACHE_NAME);
+    const responseToCache = new Response(blob, {
+      headers: {
+        "Content-Type": blob.type || "image/gif",
+      },
+    });
+    await cache.put(animationUrl, responseToCache);
+  } catch {
+    // Ignore cache write failures and continue with in-memory rendering.
+  }
+};
 
 export const fetchExerciseAnimationBlobUrl = async (exerciseId) => {
   const cacheKey = String(exerciseId || "").trim();
@@ -152,7 +216,11 @@ export const fetchExerciseAnimationBlobUrl = async (exerciseId) => {
     return animationBlobUrlCache.get(cacheKey);
   }
 
-  if (animationFailedCache.has(cacheKey)) {
+  const lastFailedAt = animationFailedCache.get(cacheKey) || 0;
+  if (
+    lastFailedAt > 0 &&
+    Date.now() - lastFailedAt < ANIMATION_FAILED_RETRY_MS
+  ) {
     return null;
   }
 
@@ -165,25 +233,39 @@ export const fetchExerciseAnimationBlobUrl = async (exerciseId) => {
     return null;
   }
 
+  const persistentBlobUrl = await readAnimationBlobFromPersistentCache(
+    cacheKey,
+    animationUrl,
+  );
+  if (persistentBlobUrl) {
+    return persistentBlobUrl;
+  }
+
   const requestPromise = (async () => {
     try {
       const response = await fetch(animationUrl, animationOptions);
       if (!response.ok) {
-        animationFailedCache.add(cacheKey);
+        if (response.status === 429) {
+          markApiRateLimited();
+        }
+        animationFailedCache.set(cacheKey, Date.now());
         return null;
       }
 
       const blob = await response.blob();
       if (!blob || !blob.type.startsWith("image/")) {
-        animationFailedCache.add(cacheKey);
+        animationFailedCache.set(cacheKey, Date.now());
         return null;
       }
 
+      await writeAnimationBlobToPersistentCache(animationUrl, blob);
+
       const blobUrl = URL.createObjectURL(blob);
       animationBlobUrlCache.set(cacheKey, blobUrl);
+      animationFailedCache.delete(cacheKey);
       return blobUrl;
     } catch {
-      animationFailedCache.add(cacheKey);
+      animationFailedCache.set(cacheKey, Date.now());
       return null;
     } finally {
       animationRequestCache.delete(cacheKey);

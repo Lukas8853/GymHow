@@ -26,6 +26,10 @@
       "placeholder": "Pretraži vježbe",
       "button": "Pretraži"
     },
+    "apiLimit": {
+      "title": "Dosegnut API limit",
+      "message": "Poslano je previše zahtjeva u kratkom vremenu. Prikazujem cacheirane i zamjenske podatke nekoliko minuta."
+    },
     "detail": {
     "addToFavorite": "Dodaj u omiljeno",
     "removeFromFavorite": "Ukloni iz omiljenih",

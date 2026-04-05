@@ -26,6 +26,10 @@
       "placeholder": "Search exercises",
       "button": "Search"
     },
+    "apiLimit": {
+      "title": "API limit reached",
+      "message": "Too many requests were sent recently. Showing cached and fallback data for a few minutes."
+    },
     "detail": {
        "addToFavorite": "Add to Favorites",
        "removeFromFavorite": "Remove from Favorites",

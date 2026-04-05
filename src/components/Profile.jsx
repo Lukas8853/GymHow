@@ -1102,7 +1102,6 @@ const Profile = () => {
                   exercise={exercise}
                   fallbackSrc={placeholder}
                   alt={exercise.name}
-                  fetchRemoteImage={false}
                   style={{
                     width: "70px",
                     height: "70px",
