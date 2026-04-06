@@ -1,10 +1,12 @@
 import React, { useContext, useEffect, useState } from "react";
 import Pagination from "@mui/material/Pagination";
 import { Box, Stack, Typography } from "@mui/material/";
+import useMediaQuery from "@mui/material/useMediaQuery";
 
 import {
   EXERCISES_CACHE_KEY,
   fetchAllExercises,
+  normalizeExercisesResponse,
   readCachedJson,
   writeCachedJson,
 } from "../utils/fetchData";
@@ -14,7 +16,8 @@ import { useTranslation } from "react-i18next";
 
 const Exercises = ({ exercises, setExercises, bodyPart }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const exercisesPerPage = 4; //broj vježbi koje se prikazuju na jednoj stranici
+  const isFullscreen = useMediaQuery("(min-width:1200px)");
+  const exercisesPerPage = isFullscreen ? 6 : 4; // broj vježbi po stranici ovisno o veličini ekrana
   const { t } = useTranslation();
   const { isDarkMode } = useContext(AppContext);
 
@@ -35,9 +38,11 @@ const Exercises = ({ exercises, setExercises, bodyPart }) => {
     //funkcija za dohvaćanje vježbi, ovisno o tome koji bodyPart je odabran
     const fetchExercisesData = async () => {
       const cachedAllExercises = readCachedJson(EXERCISES_CACHE_KEY, []);
+      const normalizedCachedExercises =
+        normalizeExercisesResponse(cachedAllExercises);
       const allExercises =
-        Array.isArray(cachedAllExercises) && cachedAllExercises.length > 0
-          ? cachedAllExercises
+        normalizedCachedExercises.length > 0
+          ? normalizedCachedExercises
           : await fetchAllExercises();
 
       if (!Array.isArray(allExercises)) {
@@ -70,16 +75,23 @@ const Exercises = ({ exercises, setExercises, bodyPart }) => {
       <Typography variant="h3" mb="46px">
         {t("exercises.showingResults")}
       </Typography>
-      <Stack
-        direction={{ lg: "row", xs: "column" }}
-        sx={{ gap: { lg: "110px", xs: "50px" } }}
-        flex="wrap"
-        justifyContent="center"
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "repeat(2, minmax(0, 1fr))",
+            lg: "repeat(3, minmax(0, 1fr))",
+            xl: "repeat(3, minmax(0, 1fr))",
+          },
+          gap: { xs: "40px", sm: "32px", lg: "48px" },
+          justifyItems: "center",
+        }}
       >
         {currentExercises.map((exercise, index) => (
           <ExerciseCard key={index} exercise={exercise} />
         ))}
-      </Stack>
+      </Box>
       <Stack mt="100px" alignItems="center">
         {exercises.length > 9 && (
           <Pagination

@@ -401,39 +401,6 @@ const Navbar = () => {
               >
                 Edit profile
               </button>
-              <Link
-                to="/Profile"
-                className="profile-menu-link"
-                style={{
-                  textDecoration: "none",
-                  color: "#3A1212",
-                  padding: "10px 20px",
-                }}
-              >
-                {t("navbar.profile")}
-              </Link>
-              <Link
-                to="/settings"
-                className="profile-menu-link"
-                style={{
-                  textDecoration: "none",
-                  color: "#3A1212",
-                  padding: "10px 20px",
-                }}
-              >
-                {t("navbar.settings")}
-              </Link>
-              <Link
-                to="/logout"
-                className="profile-menu-link"
-                style={{
-                  textDecoration: "none",
-                  color: "#3A1212",
-                  padding: "10px 20px",
-                }}
-              >
-                {t("navbar.login")}
-              </Link>
             </Stack>
           )}
         </Box>

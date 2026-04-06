@@ -92,6 +92,114 @@ body {
     color: #9a9a9a !important;
   }
 
+  .profile-photo-action {
+    width: 50%;
+    padding: 11px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: Josefin Sans, sans-serif;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .profile-photo-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+  }
+
+  .profile-photo-action-camera {
+    border: 1px solid #d0d0d0;
+    background-color: #f4f4f4;
+    color: #1a1a1a;
+  }
+
+  .profile-photo-action-camera:hover {
+    border-color: #b8b8b8;
+    background-color: #ececec;
+  }
+
+  .profile-photo-action-gallery {
+    border: 1px solid #9ed58f;
+    background-color: #e9f7e5;
+    color: #1c4b12;
+  }
+
+  .profile-photo-action-gallery:hover {
+    border-color: #7fc96d;
+    background-color: #dcf0d6;
+    color: #163d0f;
+  }
+
+  body.dark .profile-photo-action-camera {
+    border: 1px solid #3a3a3a !important;
+    background-color: #151515 !important;
+    color: #f7f7f7 !important;
+  }
+
+  body.dark .profile-photo-action-camera:hover {
+    border-color: #5a5a5a !important;
+    background-color: #1f1f1f !important;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35) !important;
+  }
+
+  body.dark .profile-photo-action-gallery {
+    border: 1px solid #2f5a2a !important;
+    background-color: #1f3a1b !important;
+    color: #e9ffe4 !important;
+  }
+
+  body.dark .profile-photo-action-gallery:hover {
+    border-color: #3f7640 !important;
+    background-color: #295024 !important;
+    color: #f1ffed !important;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35) !important;
+  }
+
+  .profile-save-button {
+    width: 100%;
+    padding: 14px;
+    margin-top: 6px;
+    border-radius: 12px;
+    border: none;
+    background-color: #5ebb4c;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: Josefin Sans, sans-serif;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      background-color 0.2s ease;
+  }
+
+  .profile-save-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background-color: #56ad46;
+    box-shadow: 0 8px 18px rgba(94, 187, 76, 0.35);
+  }
+
+  .profile-save-button:disabled {
+    box-shadow: none;
+  }
+
+  body.dark .profile-save-button:hover:not(:disabled) {
+    background-color: #69c75a;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+  }
+
+  body.dark .MuiPaginationItem-root {
+    color: #fff !important;
+  }
+
+  body.dark .MuiPaginationItem-ellipsis {
+    color: #cfcfcf !important;
+  }
+
   body.dark .exercise-name-text {
     color: #111 !important;
   }
@@ -166,10 +274,10 @@ body {
   .hero-banner-img {
     position: absolute;
     right: 40px;
-    top: 0px;
-    width: 700px;
-    height: 900px;
-    margin-top: -330px;
+    top: 40px;
+    width: 560px;
+    height: 710px;
+    margin-top: -230px;
   
   }
   
@@ -233,7 +341,14 @@ body {
     }
   
     .hero-banner-img {
-      display: none;
+      display: block;
+      width: 390px;
+      height: 520px;
+      right: 0;
+      top: 1px;
+      margin-top: 0;
+      opacity: 0.75;
+      pointer-events: none;
     }
   
     .exercise-card {
@@ -246,9 +361,20 @@ body {
     }
   
   }
+
+    @media screen and (max-width:900px) {
+      .hero-banner-img {
+        display: none;
+      }
+    }
   
   @media screen and (max-width:400px) {
     .exercise-card {
       width: 280px;
+    }
+
+    .react-horizontal-scrolling-menu--scroll-container {
+      width: 100vw !important;
+      margin-left: calc(-50vw + 50%) !important;
     }
   }

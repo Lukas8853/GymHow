@@ -37,7 +37,7 @@ const HeroBanner = () => {
       <Typography
         fontWeight={600}
         color="#FF2625"
-        sx={{ opacity: 0.1, display: { lg: "block", xs: "none" } }}
+        sx={{ opacity: 0.1, display: { md: "block", xs: "none" } }}
         fontSize="200px"
       >
         {t("heroBanner.watermark")}

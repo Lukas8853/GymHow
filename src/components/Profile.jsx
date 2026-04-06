@@ -7,6 +7,7 @@ import {
   Divider,
   IconButton,
   Stack,
+  Pagination,
 } from "@mui/material";
 import {
   signInWithPopup,
@@ -179,8 +180,9 @@ const AuthModal = ({ onClose }) => {
         backgroundColor: "rgba(0,0,0,0.45)",
         zIndex: 2000,
         display: "flex",
-        alignItems: "flex-end",
+        alignItems: "center",
         justifyContent: "center",
+        padding: "16px",
       }}
     >
       {/* Modal panel */}
@@ -188,13 +190,13 @@ const AuthModal = ({ onClose }) => {
         onClick={(e) => e.stopPropagation()}
         className="light-surface"
         sx={{
-          width: "100%",
+          width: "min(100%, 480px)",
           maxWidth: "480px",
           backgroundColor: "#fff",
-          borderRadius: "24px 24px 0 0",
+          borderRadius: "24px",
           padding: "32px 24px 40px",
           boxShadow: "0 -8px 40px rgba(0,0,0,0.18)",
-          maxHeight: "92vh",
+          maxHeight: "calc(100vh - 32px)",
           overflowY: "auto",
         }}
       >
@@ -351,10 +353,91 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
   const [photoURL, setPhotoURL] = useState(
     userProfile?.photoURL || user?.photoURL || "",
   );
+  const [selectedPhotoFile, setSelectedPhotoFile] = useState(null);
+  const [photoPreviewURL, setPhotoPreviewURL] = useState("");
   const [birthDate, setBirthDate] = useState(userProfile?.birthDate || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const compressImageToDataURL = (file) => {
+    const steps = [
+      { maxDimension: 768, quality: 0.62 },
+      { maxDimension: 512, quality: 0.52 },
+      { maxDimension: 384, quality: 0.45 },
+    ];
+    const MAX_DATA_URL_LENGTH = 180000;
+
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      const renderStep = (stepIndex) => {
+        const { maxDimension, quality } = steps[stepIndex];
+        const canvas = document.createElement("canvas");
+        const scale = Math.min(
+          1,
+          maxDimension / image.width,
+          maxDimension / image.height,
+        );
+
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+
+        const context = canvas.getContext("2d");
+        if (!context) {
+          throw new Error("Canvas context nije dostupan.");
+        }
+
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL("image/jpeg", quality);
+      };
+
+      image.onload = () => {
+        try {
+          let dataURL = "";
+
+          for (let index = 0; index < steps.length; index += 1) {
+            dataURL = renderStep(index);
+            if (dataURL.length <= MAX_DATA_URL_LENGTH) {
+              break;
+            }
+          }
+
+          if (!dataURL || dataURL.length < 100) {
+            reject(new Error("Kompresija slike nije uspjela."));
+            return;
+          }
+
+          if (dataURL.length > MAX_DATA_URL_LENGTH) {
+            reject(new Error("Slika je i dalje prevelika nakon kompresije."));
+            return;
+          }
+
+          resolve(dataURL);
+        } catch (error) {
+          reject(error);
+        } finally {
+          URL.revokeObjectURL(objectUrl);
+        }
+      };
+
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Učitavanje slike nije uspjelo."));
+      };
+
+      image.src = objectUrl;
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      if (photoPreviewURL) {
+        URL.revokeObjectURL(photoPreviewURL);
+      }
+    };
+  }, [photoPreviewURL]);
 
   const handleSelectedImage = (event) => {
     const selectedFile = event.target.files?.[0];
@@ -375,17 +458,13 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setPhotoURL(reader.result);
-        setError("");
-      }
-    };
-    reader.onerror = () => {
-      setError("Učitavanje slike nije uspjelo. Pokušaj ponovo.");
-    };
-    reader.readAsDataURL(selectedFile);
+    if (photoPreviewURL) {
+      URL.revokeObjectURL(photoPreviewURL);
+    }
+
+    setSelectedPhotoFile(selectedFile);
+    setPhotoPreviewURL(URL.createObjectURL(selectedFile));
+    setError("");
   };
 
   const inputStyle = {
@@ -425,13 +504,15 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
         return;
       }
 
-      if (
-        normalizedDisplayName !== (currentUser.displayName || "") ||
-        normalizedPhotoURL !== (currentUser.photoURL || "")
-      ) {
+      let finalPhotoURL = normalizedPhotoURL;
+
+      if (selectedPhotoFile) {
+        finalPhotoURL = await compressImageToDataURL(selectedPhotoFile);
+      }
+
+      if (normalizedDisplayName !== (currentUser.displayName || "")) {
         await updateProfile(currentUser, {
           displayName: normalizedDisplayName,
-          photoURL: normalizedPhotoURL || "",
         });
       }
 
@@ -445,20 +526,40 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
         {
           displayName: normalizedDisplayName,
           email: normalizedEmail,
-          photoURL: normalizedPhotoURL,
+          photoURL: finalPhotoURL,
           birthDate,
         },
         { merge: true },
       );
 
-      await refreshUserProfile();
+      setSelectedPhotoFile(null);
+      if (photoPreviewURL) {
+        URL.revokeObjectURL(photoPreviewURL);
+      }
+      setPhotoPreviewURL("");
+      setPhotoURL(finalPhotoURL);
+      refreshUserProfile().catch((refreshError) => {
+        console.error("Profile refresh failed:", refreshError);
+      });
       setSuccess("Profil je uspješno ažuriran.");
       setTimeout(() => onClose(), 650);
     } catch (err) {
+      console.error("Profile save failed:", err);
+
       if (err?.code === "auth/requires-recent-login") {
         setError(
           "Za promjenu emaila se morate ponovno prijaviti (odjavite se pa prijavite).",
         );
+      } else if (err?.message === "Učitavanje slike nije uspjelo.") {
+        setError("Učitavanje slike nije uspjelo. Pokušaj ponovno.");
+      } else if (err?.message === "Canvas context nije dostupan.") {
+        setError("Pregled slike nije podržan u ovom pregledniku.");
+      } else if (err?.message === "Kompresija slike nije uspjela.") {
+        setError("Kompresija slike nije uspjela. Odaberi drugu sliku.");
+      } else if (
+        err?.message === "Slika je i dalje prevelika nakon kompresije."
+      ) {
+        setError("Slika je prevelika. Odaberi manju sliku ili screenshot.");
       } else {
         setError("Spremanje promjena nije uspjelo. Pokušaj ponovo.");
       }
@@ -476,21 +577,22 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
         backgroundColor: "rgba(0,0,0,0.45)",
         zIndex: 2100,
         display: "flex",
-        alignItems: "flex-end",
+        alignItems: "center",
         justifyContent: "center",
+        padding: "16px",
       }}
     >
       <Box
         onClick={(e) => e.stopPropagation()}
         className="light-surface"
         sx={{
-          width: "100%",
+          width: "min(100%, 520px)",
           maxWidth: "520px",
           backgroundColor: "#fff",
-          borderRadius: "24px 24px 0 0",
+          borderRadius: "24px",
           padding: "28px 20px 36px",
           boxShadow: "0 -8px 40px rgba(0,0,0,0.18)",
-          maxHeight: "92vh",
+          maxHeight: "calc(100vh - 32px)",
           overflowY: "auto",
         }}
       >
@@ -542,43 +644,26 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
           <Stack direction="row" spacing={1}>
             <button
               type="button"
+              className="profile-photo-action profile-photo-action-camera"
               onClick={() => cameraInputRef.current?.click()}
-              style={{
-                width: "50%",
-                padding: "11px",
-                borderRadius: "10px",
-                border: "none",
-                backgroundColor: "#020202",
-                color: "#fff",
-                fontWeight: 700,
-                cursor: "pointer",
-                fontFamily: "Josefin Sans, sans-serif",
-              }}
             >
               Slikaj kamerom
             </button>
             <button
               type="button"
+              className="profile-photo-action profile-photo-action-gallery"
               onClick={() => galleryInputRef.current?.click()}
-              style={{
-                width: "50%",
-                padding: "11px",
-                borderRadius: "10px",
-                border: "none",
-                backgroundColor: "#020202",
-                color: "#fff",
-                fontWeight: 700,
-                cursor: "pointer",
-                fontFamily: "Josefin Sans, sans-serif",
-              }}
             >
               Galerija / Upload
             </button>
           </Stack>
 
-          {photoURL && (
+          {(photoPreviewURL || photoURL) && (
             <Stack direction="row" spacing={1.2} alignItems="center">
-              <Avatar src={photoURL} sx={{ width: 44, height: 44 }} />
+              <Avatar
+                src={photoPreviewURL || photoURL}
+                sx={{ width: 44, height: 44 }}
+              />
               <Typography sx={{ fontSize: "12px", color: "#666" }}>
                 Nova profilna je odabrana.
               </Typography>
@@ -622,19 +707,10 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
           <button
             onClick={handleSave}
             disabled={loading}
+            className="profile-save-button"
             style={{
-              width: "100%",
-              padding: "14px",
-              borderRadius: "12px",
-              border: "none",
-              backgroundColor: "#5ebb4c",
-              color: "#fff",
-              fontSize: "16px",
-              fontWeight: 700,
               cursor: loading ? "not-allowed" : "pointer",
-              fontFamily: "Josefin Sans, sans-serif",
               opacity: loading ? 0.7 : 1,
-              marginTop: "6px",
             }}
           >
             {loading ? "Spremam..." : "Spremi promjene"}
@@ -657,9 +733,11 @@ const Profile = () => {
   const [favoriteExercises, setFavoriteExercises] = useState([]);
   const [loadingFavorites, setLoadingFavorites] = useState(false);
   const [unresolvedFavoritesCount, setUnresolvedFavoritesCount] = useState(0);
+  const [favoritesPage, setFavoritesPage] = useState(1);
   const lastFetchByIdRef = useRef(new Map());
 
   const FAVORITE_FETCH_COOLDOWN_MS = 60000;
+  const FAVORITES_PER_PAGE = 10;
 
   const safeExercises = useMemo(
     () => (Array.isArray(exercises) ? exercises : []),
@@ -670,6 +748,24 @@ const Profile = () => {
     [favorites],
   );
   const favoriteCount = safeFavorites.length;
+  const totalFavoritePages = Math.max(
+    1,
+    Math.ceil(favoriteExercises.length / FAVORITES_PER_PAGE),
+  );
+  const pagedFavoriteExercises = favoriteExercises.slice(
+    (favoritesPage - 1) * FAVORITES_PER_PAGE,
+    favoritesPage * FAVORITES_PER_PAGE,
+  );
+
+  useEffect(() => {
+    setFavoritesPage(1);
+  }, [favoriteExercises.length]);
+
+  useEffect(() => {
+    if (favoritesPage > totalFavoritePages) {
+      setFavoritesPage(totalFavoritePages);
+    }
+  }, [favoritesPage, totalFavoritePages]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -929,8 +1025,8 @@ const Profile = () => {
     userProfile?.displayName || user.displayName || user.email || "Korisnik";
   const email = userProfile?.email || user.email;
   const birthDate = userProfile?.birthDate;
-  // Google korisnici imaju photoURL, email/pass korisnici nemaju
-  const photoURL = user.photoURL || null;
+  // Čitaj sliku iz Firestorea (gdje je data URL slika pohranjena), ne iz Auth-a
+  const photoURL = userProfile?.photoURL || user.photoURL || null;
   const initials = String(displayName).charAt(0).toUpperCase();
   const formattedBirthDate = birthDate
     ? (() => {
@@ -1016,7 +1112,11 @@ const Profile = () => {
               }}
             >
               <Typography
-                sx={{ fontSize: "28px", fontWeight: 800, color: "#5ebb4c" }}
+                sx={{
+                  fontSize: "28px",
+                  fontWeight: 800,
+                  color: isDarkMode ? "#fff" : "#5ebb4c",
+                }}
               >
                 {favoriteCount}
               </Typography>
@@ -1065,7 +1165,7 @@ const Profile = () => {
                 učitane zbog API ograničenja.
               </Typography>
             )}
-            {favoriteExercises.map((exercise) => (
+            {pagedFavoriteExercises.map((exercise) => (
               <Box
                 key={exercise.id}
                 className="light-surface"
@@ -1132,6 +1232,20 @@ const Profile = () => {
                 </Box>
               </Box>
             ))}
+
+            {totalFavoritePages > 1 && (
+              <Box sx={{ display: "flex", justifyContent: "center", pt: 1 }}>
+                <Pagination
+                  count={totalFavoritePages}
+                  page={favoritesPage}
+                  onChange={(_, page) => setFavoritesPage(page)}
+                  color="success"
+                  shape="rounded"
+                  siblingCount={0}
+                  boundaryCount={1}
+                />
+              </Box>
+            )}
           </Stack>
         )}
       </Box>

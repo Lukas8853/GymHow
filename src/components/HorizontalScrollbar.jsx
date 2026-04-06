@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { Box, Typography } from "@mui/material";
 import { ScrollMenu, VisibilityContext } from "react-horizontal-scrolling-menu";
 
@@ -27,14 +27,35 @@ const RightArrow = () => {
 };
 
 const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, isBodyParts }) => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 400);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 400);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const margin = isMobile ? "0 5px" : isBodyParts ? "0 10px" : "0 40px";
+
   return (
     <ScrollMenu LeftArrow={LeftArrow} RightArrow={RightArrow}>
-      {data.map((item) => (
+      {data.map((item, index) => (
         <Box
           key={item.id || item}
           itemId={item.id || item}
           title={item.id || item}
-          margin={isBodyParts ? "0 10px" : "0 40px"}
+          margin={margin}
+          sx={
+            isMobile
+              ? {
+                  ...(index === 0 && { ml: "0" }),
+                  ...(index === data.length - 1 && { mr: "0" }),
+                }
+              : {}
+          }
         >
           {isBodyParts ? (
             <BodyPart

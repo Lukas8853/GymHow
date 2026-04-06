@@ -8,7 +8,7 @@ const firebaseConfig = {
   projectId: "gymhow-zavrsni",
   storageBucket: "gymhow-zavrsni.firebasestorage.app",
   messagingSenderId: "460005855586",
-  appId: "1:460005855586:web:273ff224f13f3ffc0edc3b"
+  appId: "1:460005855586:web:273ff224f13f3ffc0edc3b",
 };
 
 const app = initializeApp(firebaseConfig);
