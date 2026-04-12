@@ -18,6 +18,15 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
   const [bodyParts, setBodyParts] = useState([]);
   const { t } = useTranslation();
 
+  const scrollToExercisesResults = () => {
+    setTimeout(() => {
+      const exercisesSection = document.getElementById("exercises");
+      if (exercisesSection) {
+        exercisesSection.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 100);
+  };
+
   useEffect(() => {
     const fetchExercisesData = async () => {
       const cachedBodyParts = readCachedJson(BODYPARTS_CACHE_KEY, null);
@@ -56,6 +65,7 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
     if (!search.trim()) {
       if (Array.isArray(cachedExercises) && cachedExercises.length > 0) {
         setExercises(cachedExercises);
+        scrollToExercisesResults();
         return;
       }
 
@@ -67,6 +77,7 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
           getBodyPartsFromExercises(allExercises),
         );
         setExercises(allExercises);
+        scrollToExercisesResults();
       }
       return;
     }
@@ -76,12 +87,14 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
 
       setSearch("");
       setExercises(searchedExercises);
+      scrollToExercisesResults();
       return;
     }
 
     const exercisesData = await fetchAllExercises();
     if (!Array.isArray(exercisesData) || exercisesData.length === 0) {
       setExercises([]);
+      scrollToExercisesResults();
       return;
     }
 
@@ -93,6 +106,7 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
     const searchedExercises = filterExercisesByQuery(exercisesData, search);
     setSearch("");
     setExercises(searchedExercises);
+    scrollToExercisesResults();
   };
 
   return (
@@ -116,6 +130,12 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
           height="76px"
           value={search}
           onChange={(e) => setSearch(e.target.value.toLowerCase())}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleSearch();
+            }
+          }}
           placeholder={t("searchExercises.placeholder")}
           type="text"
         />

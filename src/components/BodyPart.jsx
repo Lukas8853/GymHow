@@ -28,10 +28,10 @@ const BodyPart = ({ item, setBodyPart, bodyPart }) => {
         borderTop: bodyPart === item ? "4px solid #ff2625" : "",
         background: "#fff",
         borderBottomLeftRadius: "20px",
-        width: "270px",
-        height: "280px",
+        width: { xs: "220px", sm: "248px", md: "270px" },
+        height: { xs: "230px", sm: "255px", md: "280px" },
         cursor: "pointer",
-        gap: "47px",
+        gap: { xs: "26px", sm: "34px", md: "47px" },
       }}
       onClick={() => {
         setBodyPart(item);
@@ -40,8 +40,8 @@ const BodyPart = ({ item, setBodyPart, bodyPart }) => {
     >
       <Box
         sx={{
-          width: "96px",
-          height: "96px",
+          width: { xs: "78px", sm: "88px", md: "96px" },
+          height: { xs: "78px", sm: "88px", md: "96px" },
           borderRadius: "50%",
           backgroundColor: isDarkMode ? "#ffffff" : "transparent",
           display: "flex",
@@ -74,11 +74,11 @@ const BodyPart = ({ item, setBodyPart, bodyPart }) => {
                                 : Waist
           } //ako je item all onda se stavi All, ako je back onda se stavi Back itd.
           alt={item}
-          style={{ width: "68px", height: "68px" }}
+          style={{ width: "56px", height: "56px" }}
         />
       </Box>
       <Typography
-        fontSize="24px"
+        fontSize={{ xs: "20px", sm: "22px", md: "24px" }}
         fontWeight="bold"
         color="#3A1212"
         textTransform="capitalize"

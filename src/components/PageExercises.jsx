@@ -32,6 +32,29 @@ const PageExercises = () => {
     return (params.get("q") || "").trim().toLowerCase();
   }, [location.search]);
 
+  const selectedBodyParts = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+
+    const multiValue = (params.get("bodyParts") || "").trim().toLowerCase();
+    if (multiValue) {
+      return Array.from(
+        new Set(
+          multiValue
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean),
+        ),
+      );
+    }
+
+    const legacyValue = (params.get("bodyPart") || "").trim().toLowerCase();
+    if (legacyValue && legacyValue !== "all") {
+      return [legacyValue];
+    }
+
+    return [];
+  }, [location.search]);
+
   useEffect(() => {
     const loadExercises = async () => {
       setIsLoading(true);
@@ -74,12 +97,20 @@ const PageExercises = () => {
       return [];
     }
 
-    if (!searchQuery) {
-      return exercises;
+    const queryFiltered = searchQuery
+      ? filterExercisesByQuery(exercises, searchQuery)
+      : exercises;
+
+    if (selectedBodyParts.length === 0) {
+      return queryFiltered;
     }
 
-    return filterExercisesByQuery(exercises, searchQuery);
-  }, [exercises, searchQuery]);
+    return queryFiltered.filter((exercise) =>
+      selectedBodyParts.includes(
+        (exercise?.bodyPart || "").trim().toLowerCase(),
+      ),
+    );
+  }, [exercises, searchQuery, selectedBodyParts]);
 
   const groupedExercises = useMemo(() => {
     if (!Array.isArray(filteredExercises)) {
@@ -157,7 +188,7 @@ const PageExercises = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [exerciseSortOrder, searchQuery]);
+  }, [exerciseSortOrder, searchQuery, selectedBodyParts]);
 
   useEffect(() => {
     if (currentPage > totalPages) {

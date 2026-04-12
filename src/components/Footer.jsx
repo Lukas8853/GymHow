@@ -1,8 +1,7 @@
 import React, { useContext } from "react";
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography, useMediaQuery } from "@mui/material";
 import { Link, useLocation } from "react-router-dom";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
-import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import FitnessCenterOutlinedIcon from "@mui/icons-material/FitnessCenterOutlined";
 import SportsGymnasticsOutlinedIcon from "@mui/icons-material/SportsGymnasticsOutlined";
 import { AppContext } from "../AppContext";
@@ -10,6 +9,11 @@ import { AppContext } from "../AppContext";
 const Footer = () => {
   const location = useLocation();
   const { isDarkMode } = useContext(AppContext);
+  const showMobileFooter = useMediaQuery("(max-width:1199.95px)");
+
+  if (!showMobileFooter) {
+    return null;
+  }
 
   const tabs = [
     {

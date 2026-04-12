@@ -1,18 +1,23 @@
 import { useRef, useState, useEffect, useContext } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Box, Stack, Typography } from "@mui/material"; //služi za organizaciju elemenata u stacku, može biti horizontalno ili vertikalno
+import { Box, Stack, Typography, useMediaQuery } from "@mui/material"; //služi za organizaciju elemenata u stacku, može biti horizontalno ili vertikalno
 import { useTranslation } from "react-i18next"; //služi za prevođenje teksta na različite jezike
 import SettingsIcon from "@mui/icons-material/Settings";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import FilterListOutlinedIcon from "@mui/icons-material/FilterListOutlined";
+import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
+import SportsGymnasticsOutlinedIcon from "@mui/icons-material/SportsGymnasticsOutlined";
 
 import { AppContext } from "../AppContext";
 import {
+  BODYPARTS_CACHE_KEY,
   EXERCISES_CACHE_KEY,
   fetchAllExercises,
   filterExercisesByQuery,
+  getBodyPartsFromExercises,
   readCachedJson,
   writeCachedJson,
 } from "../utils/fetchData";
@@ -23,6 +28,7 @@ const Navbar = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
+  const [bodyPartOptions, setBodyPartOptions] = useState(["all"]);
   const {
     isDarkMode,
     setIsDarkMode,
@@ -33,6 +39,7 @@ const Navbar = () => {
   const { i18n, t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const showDesktopNav = useMediaQuery("(min-width:1200px)");
 
   const isHomePage = location.pathname === "/";
   const isProfilePage = location.pathname === "/Profile";
@@ -45,6 +52,51 @@ const Navbar = () => {
     : isExercisesPage
       ? "Exercises"
       : "Home";
+
+  const selectedBodyParts = (() => {
+    const params = new URLSearchParams(location.search);
+    const multiValue = (params.get("bodyParts") || "").trim().toLowerCase();
+
+    if (multiValue) {
+      return Array.from(
+        new Set(
+          multiValue
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean),
+        ),
+      );
+    }
+
+    const legacyValue = (params.get("bodyPart") || "").trim().toLowerCase();
+    if (legacyValue && legacyValue !== "all") {
+      return [legacyValue];
+    }
+
+    return [];
+  })();
+  const isAllBodyPartsSelected = selectedBodyParts.length === 0;
+
+  const desktopTabs = [
+    {
+      label: "Profile",
+      path: "/Profile",
+      isActive: isProfilePage,
+      icon: PersonOutlineOutlinedIcon,
+    },
+    {
+      label: "Home",
+      path: "/",
+      isActive: isHomePage,
+      icon: HomeOutlinedIcon,
+    },
+    {
+      label: "Exercises",
+      path: "/Exercises",
+      isActive: isExercisesPage,
+      icon: SportsGymnasticsOutlinedIcon,
+    },
+  ];
 
   const navBackground = isProfilePage
     ? isDarkMode
@@ -176,11 +228,61 @@ const Navbar = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const cachedBodyParts = readCachedJson(BODYPARTS_CACHE_KEY, null);
+    if (Array.isArray(cachedBodyParts) && cachedBodyParts.length > 0) {
+      setBodyPartOptions(["all", ...cachedBodyParts]);
+      return;
+    }
+
+    const cachedExercises = readCachedJson(EXERCISES_CACHE_KEY, []);
+    if (Array.isArray(cachedExercises) && cachedExercises.length > 0) {
+      const derivedBodyParts = getBodyPartsFromExercises(cachedExercises);
+      writeCachedJson(BODYPARTS_CACHE_KEY, derivedBodyParts);
+      setBodyPartOptions(["all", ...derivedBodyParts]);
+      return;
+    }
+
+    setBodyPartOptions(["all"]);
+  }, []);
+
+  const handleBodyPartFilterChange = (nextBodyPart) => {
+    const params = new URLSearchParams(location.search);
+
+    if (nextBodyPart === "all") {
+      params.delete("bodyPart");
+      params.delete("bodyParts");
+    } else {
+      const nextSelected = new Set(selectedBodyParts);
+
+      if (nextSelected.has(nextBodyPart)) {
+        nextSelected.delete(nextBodyPart);
+      } else {
+        nextSelected.add(nextBodyPart);
+      }
+
+      const normalizedSelection = Array.from(nextSelected).sort((a, b) =>
+        a.localeCompare(b),
+      );
+
+      params.delete("bodyPart");
+      if (normalizedSelection.length === 0) {
+        params.delete("bodyParts");
+      } else {
+        params.set("bodyParts", normalizedSelection.join(","));
+      }
+    }
+
+    const nextQueryString = params.toString();
+    navigate(nextQueryString ? `/Exercises?${nextQueryString}` : "/Exercises");
+  };
+
   return (
     <Box position="relative" ref={dropDownMenuRef}>
       <Stack
         direction="row"
         sx={{
+          position: "relative",
           gap: { sm: "40px", xs: "16px" },
           justifyContent: "space-between",
           alignItems: "center",
@@ -190,13 +292,92 @@ const Navbar = () => {
           background: navBackground,
         }}
       >
-        <Stack direction="column" spacing={0.1} alignItems="flex-start">
-          <Typography
-            sx={{ fontSize: { xs: "20px", sm: "24px" }, fontWeight: 800 }}
-          >
-            {pageTitle}
-          </Typography>
-        </Stack>
+        <Box
+          sx={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0 }}
+        >
+          {showDesktopNav ? (
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="flex-start"
+              spacing={1.25}
+              sx={{
+                px: 0,
+                py: 0,
+                width: "fit-content",
+                zIndex: 1,
+              }}
+            >
+              {desktopTabs.map((tab) => (
+                <Link
+                  key={tab.label}
+                  to={tab.path}
+                  style={{ textDecoration: "none", color: "inherit" }}
+                >
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                    justifyContent="center"
+                    sx={{
+                      minWidth: "132px",
+                      px: 2,
+                      py: 1.1,
+                      borderRadius: "999px",
+                      border: tab.isActive
+                        ? isDarkMode
+                          ? "1px solid rgba(255, 255, 255, 0.28)"
+                          : "1px solid rgba(0, 0, 0, 0.16)"
+                        : isDarkMode
+                          ? "1px solid rgba(255, 255, 255, 0.14)"
+                          : "1px solid rgba(0, 0, 0, 0.1)",
+                      backgroundColor: tab.isActive
+                        ? isDarkMode
+                          ? "rgba(255, 255, 255, 0.16)"
+                          : "rgba(0, 0, 0, 0.06)"
+                        : isDarkMode
+                          ? "rgba(255, 255, 255, 0.06)"
+                          : "rgba(0, 0, 0, 0.03)",
+                      color: isDarkMode ? "#fff" : "#000",
+                      transition:
+                        "transform 0.2s ease, background-color 0.2s ease",
+                      "&:hover": {
+                        transform: "translateY(-1px)",
+                        backgroundColor: isDarkMode
+                          ? "rgba(255, 255, 255, 0.18)"
+                          : "rgba(0, 0, 0, 0.08)",
+                      },
+                    }}
+                  >
+                    <tab.icon sx={{ fontSize: "20px" }} />
+                    <Typography
+                      sx={{
+                        fontSize: "14px",
+                        fontWeight: tab.isActive ? 800 : 600,
+                        color: "inherit",
+                      }}
+                    >
+                      {tab.label}
+                    </Typography>
+                  </Stack>
+                </Link>
+              ))}
+            </Stack>
+          ) : (
+            <Stack direction="column" spacing={0.1} alignItems="flex-start">
+              <Typography
+                sx={{
+                  fontSize: { xs: "20px", sm: "24px" },
+                  fontWeight: 800,
+                  color: isDarkMode ? "#fff" : "#000",
+                }}
+              >
+                {pageTitle}
+              </Typography>
+            </Stack>
+          )}
+        </Box>
+
         <Box
           sx={{
             position: "relative",
@@ -240,14 +421,36 @@ const Navbar = () => {
                         position: "absolute",
                         top: "46px",
                         right: 0,
-                        backgroundColor: "#fff",
+                        backgroundColor: isDarkMode ? "#101215" : "#fff",
                         borderRadius: "10px",
-                        boxShadow: "0px 6px 16px rgba(0, 0, 0, 0.15)",
+                        boxShadow: isDarkMode
+                          ? "0px 10px 24px rgba(0, 0, 0, 0.5)"
+                          : "0px 6px 16px rgba(0, 0, 0, 0.15)",
+                        border: isDarkMode
+                          ? "1px solid rgba(255, 255, 255, 0.12)"
+                          : "1px solid rgba(0, 0, 0, 0.08)",
                         p: "6px",
-                        minWidth: "150px",
+                        minWidth: "200px",
+                        maxHeight: "320px",
+                        overflowY: "auto",
                         zIndex: 10000,
                       }}
                     >
+                      <Typography
+                        sx={{
+                          px: 1,
+                          pt: 0.5,
+                          pb: 0.5,
+                          fontSize: "12px",
+                          fontWeight: 700,
+                          color: isDarkMode ? "#a7b0bb" : "#525252",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.04em",
+                        }}
+                      >
+                        Sort
+                      </Typography>
+
                       <button
                         onClick={() => {
                           setExerciseSortOrder("az");
@@ -255,11 +458,19 @@ const Navbar = () => {
                         }}
                         style={{
                           height: "34px",
-                          border: "none",
+                          border: isDarkMode
+                            ? "1px solid rgba(255, 255, 255, 0.08)"
+                            : "1px solid rgba(0, 0, 0, 0.06)",
                           borderRadius: "8px",
                           backgroundColor:
-                            exerciseSortOrder === "az" ? "#ffe9e9" : "#fff",
-                          color: "#1f1f1f",
+                            exerciseSortOrder === "az"
+                              ? isDarkMode
+                                ? "rgba(255, 99, 99, 0.26)"
+                                : "#ffe9e9"
+                              : isDarkMode
+                                ? "#161b22"
+                                : "#f8f8f8",
+                          color: isDarkMode ? "#f3f4f6" : "#1f1f1f",
                           cursor: "pointer",
                           textAlign: "left",
                           padding: "0 10px",
@@ -274,11 +485,19 @@ const Navbar = () => {
                         }}
                         style={{
                           height: "34px",
-                          border: "none",
+                          border: isDarkMode
+                            ? "1px solid rgba(255, 255, 255, 0.08)"
+                            : "1px solid rgba(0, 0, 0, 0.06)",
                           borderRadius: "8px",
                           backgroundColor:
-                            exerciseSortOrder === "za" ? "#ffe9e9" : "#fff",
-                          color: "#1f1f1f",
+                            exerciseSortOrder === "za"
+                              ? isDarkMode
+                                ? "rgba(255, 99, 99, 0.26)"
+                                : "#ffe9e9"
+                              : isDarkMode
+                                ? "#161b22"
+                                : "#f8f8f8",
+                          color: isDarkMode ? "#f3f4f6" : "#1f1f1f",
                           cursor: "pointer",
                           textAlign: "left",
                           padding: "0 10px",
@@ -286,6 +505,81 @@ const Navbar = () => {
                       >
                         Uzlazno (Z-A)
                       </button>
+
+                      <Typography
+                        sx={{
+                          px: 1,
+                          pt: 1,
+                          pb: 0.5,
+                          fontSize: "12px",
+                          fontWeight: 700,
+                          color: isDarkMode ? "#a7b0bb" : "#525252",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.04em",
+                        }}
+                      >
+                        Body part
+                      </Typography>
+
+                      {bodyPartOptions.map((bodyPart) => (
+                        <label
+                          key={bodyPart}
+                          style={{
+                            height: "34px",
+                            borderRadius: "8px",
+                            border: isDarkMode
+                              ? "1px solid rgba(255, 255, 255, 0.08)"
+                              : "1px solid rgba(0, 0, 0, 0.06)",
+                            backgroundColor: (
+                              bodyPart === "all"
+                                ? isAllBodyPartsSelected
+                                : selectedBodyParts.includes(bodyPart)
+                            )
+                              ? isDarkMode
+                                ? "rgba(255, 99, 99, 0.26)"
+                                : "#ffe9e9"
+                              : isDarkMode
+                                ? "#161b22"
+                                : "#f8f8f8",
+                            color: isDarkMode ? "#f3f4f6" : "#1f1f1f",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            padding: "0 10px",
+                            textTransform: "capitalize",
+                            fontWeight: (
+                              bodyPart === "all"
+                                ? isAllBodyPartsSelected
+                                : selectedBodyParts.includes(bodyPart)
+                            )
+                              ? 700
+                              : 500,
+                            userSelect: "none",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={
+                              bodyPart === "all"
+                                ? isAllBodyPartsSelected
+                                : selectedBodyParts.includes(bodyPart)
+                            }
+                            onChange={() =>
+                              handleBodyPartFilterChange(bodyPart)
+                            }
+                            style={{
+                              cursor: "pointer",
+                              width: "15px",
+                              height: "15px",
+                              margin: 0,
+                              accentColor: "#ff5a5a",
+                              flexShrink: 0,
+                            }}
+                          />
+                          {bodyPart}
+                        </label>
+                      ))}
                     </Stack>
                   )}
                 </Box>
@@ -297,13 +591,16 @@ const Navbar = () => {
                   setIsSortMenuOpen(false);
                 }}
                 style={{
-                  width: "48px",
-                  height: "48px",
+                  width: "40px",
+                  height: "40px",
                   border: "none",
-                  borderRadius: "12px",
+                  borderRadius: "10px",
                   backgroundColor: "#020202",
                   color: "#fff",
                   cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
                 <SearchOutlinedIcon />
@@ -315,15 +612,20 @@ const Navbar = () => {
             <button
               onClick={toggleDropDownMenu}
               style={{
-                background: "none",
+                width: "40px",
+                height: "40px",
                 border: "none",
+                borderRadius: "10px",
+                backgroundColor: "#020202",
+                color: "#fff",
                 cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 padding: 0,
               }}
             >
-              <SettingsIcon
-                sx={{ fontSize: "48px", verticalAlign: "middle" }}
-              />
+              <SettingsIcon fontSize="small" sx={{ verticalAlign: "middle" }} />
             </button>
           )}
           {isProfilePage && isDropDownMenuOpen && (
