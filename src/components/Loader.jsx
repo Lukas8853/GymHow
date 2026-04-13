@@ -13,6 +13,6 @@ const Loader = () => {
       <InfinitySpin color="gray" />
     </Stack>
   );
-};
+};//all my homes hate smolec
 
 export default Loader;

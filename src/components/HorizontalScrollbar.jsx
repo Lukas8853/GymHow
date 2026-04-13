@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useRef } from "react";
+import React, { useContext, useState, useEffect, useRef, useMemo } from "react";
 import { Box } from "@mui/material";
 import { ScrollMenu, VisibilityContext } from "react-horizontal-scrolling-menu";
 import { AppContext } from "../AppContext";
@@ -87,10 +87,14 @@ const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, isBodyParts }) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [dots, setDots] = useState([]);
   const [activeDotIndex, setActiveDotIndex] = useState(0);
+  const [mobileActiveIndex, setMobileActiveIndex] = useState(0);
   const apiRef = useRef(null);
   const dotClickLockRef = useRef({ targetIndex: null, startedAt: 0 });
   const syncTimeoutsRef = useRef([]);
-  const itemIds = data.map((item) => String(item.id || item));
+  const itemIds = useMemo(
+    () => data.map((item) => String(item.id || item)),
+    [data],
+  );
  
   const DESKTOP_VISIBLE = 5;
  
@@ -107,6 +111,28 @@ const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, isBodyParts }) => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    if (!isBodyParts || !isMobile || !itemIds.length) return;
+
+    const selectedIndex = itemIds.findIndex(
+      (itemId) => itemId === String(bodyPart),
+    );
+    const nextIndex =
+      selectedIndex >= 0
+        ? selectedIndex
+        : Math.min(mobileActiveIndex, itemIds.length - 1);
+
+    setMobileActiveIndex(nextIndex);
+    setActiveDotIndex(nextIndex);
+    setDots((prevDots) => {
+      const nextDots = itemIds.map((_, index) => index);
+      const isSameDots =
+        prevDots.length === nextDots.length &&
+        prevDots.every((dot, index) => dot === nextDots[index]);
+      return isSameDots ? prevDots : nextDots;
+    });
+  }, [bodyPart, itemIds, isBodyParts, isMobile, mobileActiveIndex]);
  
   useEffect(() => {
     return () => {
@@ -262,6 +288,25 @@ const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, isBodyParts }) => {
       syncTimeoutsRef.current.push(timeoutId);
     });
   };
+
+  const handleMobileNavigate = (direction) => {
+    if (!data.length) return;
+
+    const nextIndex =
+      (mobileActiveIndex + direction + data.length) % data.length;
+
+    setMobileActiveIndex(nextIndex);
+    setActiveDotIndex(nextIndex);
+    setBodyPart?.(data[nextIndex]);
+  };
+
+  const handleMobileDotClick = (pageIndex) => {
+    if (!data.length) return;
+
+    setMobileActiveIndex(pageIndex);
+    setActiveDotIndex(pageIndex);
+    setBodyPart?.(data[pageIndex]);
+  };
  
   const margin = isBodyParts
     ? isMobile
@@ -270,6 +315,135 @@ const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, isBodyParts }) => {
     : isMobile
       ? "0 8px"
       : "0 40px";
+
+  if (isBodyParts && isMobile) {
+    const activeItem = data[mobileActiveIndex] ?? data[0];
+
+    return (
+      <Box
+        sx={{
+          position: "relative",
+          width: "100%",
+          maxWidth: "420px",
+          mx: "auto",
+          pt: 1,
+          pb: 4,
+        }}
+      >
+        <Box
+          sx={{
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "300px",
+            px: { xs: 6.5, sm: 8 },
+          }}
+        >
+          <button
+            type="button"
+            aria-label="Previous"
+            onClick={() => handleMobileNavigate(-1)}
+            style={{
+              position: "absolute",
+              left: 0,
+              top: "50%",
+              transform: "translateY(-50%)",
+              width: "36px",
+              height: "36px",
+              borderRadius: "999px",
+              border: "1px solid rgba(255, 255, 255, 0.25)",
+              backgroundColor: "rgba(0, 0, 0, 0.55)",
+              color: "#fff",
+              fontSize: "24px",
+              lineHeight: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              zIndex: 5,
+            }}
+          >
+            {"\u2039"}
+          </button>
+
+          <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
+            {activeItem ? (
+              <BodyPart
+                item={activeItem}
+                bodyPart={bodyPart}
+                setBodyPart={setBodyPart}
+                compact
+              />
+            ) : null}
+          </Box>
+
+          <button
+            type="button"
+            aria-label="Next"
+            onClick={() => handleMobileNavigate(1)}
+            style={{
+              position: "absolute",
+              right: 0,
+              top: "50%",
+              transform: "translateY(-50%)",
+              width: "36px",
+              height: "36px",
+              borderRadius: "999px",
+              border: "1px solid rgba(255, 255, 255, 0.25)",
+              backgroundColor: "rgba(0, 0, 0, 0.55)",
+              color: "#fff",
+              fontSize: "24px",
+              lineHeight: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              zIndex: 5,
+            }}
+          >
+            {"\u203A"}
+          </button>
+        </Box>
+
+        {dots.length > 1 && (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: 1,
+              mt: 1.5,
+            }}
+          >
+            {dots.map((pageIndex) => (
+              <button
+                key={pageIndex}
+                type="button"
+                aria-label={`Go to slide ${pageIndex + 1}`}
+                onClick={() => handleMobileDotClick(pageIndex)}
+                style={{
+                  width: activeDotIndex === pageIndex ? "18px" : "8px",
+                  height: "8px",
+                  borderRadius: "999px",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  backgroundColor:
+                    activeDotIndex === pageIndex
+                      ? "#FF2625"
+                      : isDarkMode
+                        ? "rgba(255, 255, 255, 0.35)"
+                        : "#bdbdbd",
+                }}
+              />
+            ))}
+          </Box>
+        )}
+      </Box>
+    );
+  }
  
   if (!isBodyParts) {
     return (

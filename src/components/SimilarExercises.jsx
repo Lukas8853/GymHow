@@ -35,7 +35,7 @@ const SimilarExercises = ({
         {equipmentMuscleExercises.length ? (
           <HorizontalScrollbar data={equipmentMuscleExercises} />
         ) : (
-          <Loader />
+          <Loader /> //smolec was here
         )}
       </Stack>
     </Box>

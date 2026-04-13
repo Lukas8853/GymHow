@@ -119,7 +119,10 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
       >
         <Trans i18nKey="searchExercises.title" components={{ br: <br /> }} />
       </Typography>
-      <Box position="relative" mb="72px">
+      <Box
+        position="relative"
+        mb={{ xs: "36px", sm: "48px", lg: "72px" }}
+      >
         <TextField
           sx={{
             input: { fontWeight: "700", border: "none", borderRadius: "4px" },

@@ -278,7 +278,16 @@ const Navbar = () => {
   };
 
   return (
-    <Box position="relative" ref={dropDownMenuRef}>
+    <Box
+      ref={dropDownMenuRef}
+      sx={{
+        position: "sticky",
+        top: -1,
+        pt: "1px",
+        zIndex: 1300,
+        background: navBackground,
+      }}
+    >
       <Stack
         direction="row"
         sx={{
@@ -288,7 +297,7 @@ const Navbar = () => {
           alignItems: "center",
           px: { sm: 3, xs: 2 },
           py: 1,
-          borderRadius: "16px",
+          borderRadius: "0 0 16px 16px",
           background: navBackground,
         }}
       >

@@ -44,7 +44,7 @@ const Footer = () => {
 
   return (
     <>
-      <Box sx={{ height: "84px" }} />
+      <Box sx={{ height: "calc(84px + env(safe-area-inset-bottom))" }} />
       <Stack
         direction="row"
         justifyContent="space-around"
@@ -54,9 +54,10 @@ const Footer = () => {
           bottom: 0,
           left: 0,
           right: 0,
-          height: "84px",
+          height: "calc(84px + env(safe-area-inset-bottom))",
           px: 1,
-          pb: "max(8px, env(safe-area-inset-bottom))",
+          pt: "8px",
+          pb: "calc(8px + env(safe-area-inset-bottom))",
           background: isDarkMode
             ? "#0e0d0d"
             : "linear-gradient(180deg, #ffffff 0%, #fff3f4 100%)",

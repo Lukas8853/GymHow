@@ -15,7 +15,7 @@ import { AppContext } from "../AppContext";
 import ExerciseCard from "./ExerciseCard";
 import { useTranslation } from "react-i18next";
 
-const Exercises = ({ exercises, setExercises, bodyPart }) => {
+const Exercises = ({ exercises, setExercises, bodyPart, detailFilter }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const isFullscreen = useMediaQuery("(min-width:1200px)");
   const exercisesPerPage = isFullscreen ? 6 : 4; // broj vježbi po stranici ovisno o veličini ekrana
@@ -34,6 +34,10 @@ const Exercises = ({ exercises, setExercises, bodyPart }) => {
     setCurrentPage(value);
     window.scrollTo({ top: 1800, behavior: "smooth" }); //vraća nas na vrh stranice
   };
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [bodyPart, detailFilter]);
 
   useEffect(() => {
     //funkcija za dohvaćanje vježbi, ovisno o tome koji bodyPart je odabran
@@ -55,19 +59,35 @@ const Exercises = ({ exercises, setExercises, bodyPart }) => {
         writeCachedJson(EXERCISES_CACHE_KEY, allExercises);
       }
 
-      const normalizedBodyPart = String(bodyPart || "").toLowerCase();
+      const filterType = String(detailFilter?.type || "bodyPart").toLowerCase();
+      const filterValue = String(
+        detailFilter?.value || bodyPart || "all",
+      ).toLowerCase();
+
       const exercisesData =
-        normalizedBodyPart === "all"
-          ? allExercises
-          : allExercises.filter(
-              (exercise) =>
-                getExerciseBodyParts(exercise).includes(normalizedBodyPart),
-            );
+        filterType === "bodypart"
+          ? filterValue === "all"
+            ? allExercises
+            : allExercises.filter((exercise) =>
+                getExerciseBodyParts(exercise).includes(filterValue),
+              )
+          : filterType === "target"
+            ? allExercises.filter(
+                (exercise) =>
+                  String(exercise?.target || "").toLowerCase() === filterValue,
+              )
+            : filterType === "equipment"
+              ? allExercises.filter(
+                  (exercise) =>
+                    String(exercise?.equipment || "").toLowerCase() ===
+                    filterValue,
+                )
+              : allExercises;
 
       setExercises(exercisesData);
     };
     fetchExercisesData();
-  }, [bodyPart]); //ako se promjeni bodyPart, onda se poziva useEffect i mijenja se currentPage na 1
+  }, [bodyPart, detailFilter]); //ako se promjeni filter, onda se dohvaćanje i prikaz osvježe
 
   //console.log(exercises);
   return (

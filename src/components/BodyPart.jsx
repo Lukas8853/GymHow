@@ -15,7 +15,8 @@ import UpperArms from "../assets/icons/bodyParts/upperArms.png";
 import UpperLegs from "../assets/icons/bodyParts/upperLegs.png";
 import Waist from "../assets/icons/bodyParts/waist.png";
 import { useTranslation } from "react-i18next";
-const BodyPart = ({ item, setBodyPart, bodyPart }) => {
+
+const BodyPart = ({ item, setBodyPart, bodyPart, compact = false }) => {
   const { t } = useTranslation();
   const { isDarkMode } = useContext(AppContext);
   return (
@@ -28,10 +29,16 @@ const BodyPart = ({ item, setBodyPart, bodyPart }) => {
         borderTop: bodyPart === item ? "4px solid #ff2625" : "",
         background: "#fff",
         borderBottomLeftRadius: "20px",
-        width: { xs: "220px", sm: "248px", md: "270px" },
-        height: { xs: "230px", sm: "255px", md: "280px" },
+        width: compact
+          ? { xs: "236px", sm: "258px", md: "270px" }
+          : { xs: "220px", sm: "248px", md: "270px" },
+        height: compact
+          ? { xs: "248px", sm: "266px", md: "280px" }
+          : { xs: "230px", sm: "255px", md: "280px" },
         cursor: "pointer",
-        gap: { xs: "26px", sm: "34px", md: "47px" },
+        gap: compact
+          ? { xs: "30px", sm: "36px", md: "47px" }
+          : { xs: "26px", sm: "34px", md: "47px" },
       }}
       onClick={() => {
         setBodyPart(item);
@@ -40,8 +47,12 @@ const BodyPart = ({ item, setBodyPart, bodyPart }) => {
     >
       <Box
         sx={{
-          width: { xs: "78px", sm: "88px", md: "96px" },
-          height: { xs: "78px", sm: "88px", md: "96px" },
+          width: compact
+            ? { xs: "86px", sm: "94px", md: "96px" }
+            : { xs: "78px", sm: "88px", md: "96px" },
+          height: compact
+            ? { xs: "86px", sm: "94px", md: "96px" }
+            : { xs: "78px", sm: "88px", md: "96px" },
           borderRadius: "50%",
           backgroundColor: isDarkMode ? "#ffffff" : "transparent",
           display: "flex",
@@ -74,7 +85,7 @@ const BodyPart = ({ item, setBodyPart, bodyPart }) => {
                                 : Waist
           } //ako je item all onda se stavi All, ako je back onda se stavi Back itd.
           alt={item}
-          style={{ width: "56px", height: "56px" }}
+          style={{ width: compact ? "62px" : "56px", height: compact ? "62px" : "56px" }}
         />
       </Box>
       <Typography
