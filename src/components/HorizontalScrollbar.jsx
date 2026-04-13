@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
 import { Box } from "@mui/material";
 import { ScrollMenu, VisibilityContext } from "react-horizontal-scrolling-menu";
+import { AppContext } from "../AppContext";
  
 import BodyPart from "./BodyPart";
 import ExerciseCard from "./ExerciseCard";
@@ -82,6 +83,7 @@ const RightArrow = ({ isCompact, onArrowNavigate }) => {
 };
  
 const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, isBodyParts }) => {
+  const { isDarkMode } = useContext(AppContext);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [dots, setDots] = useState([]);
   const [activeDotIndex, setActiveDotIndex] = useState(0);
@@ -360,7 +362,9 @@ const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, isBodyParts }) => {
                 backgroundColor:
                   activeDotIndex === pageIndex
                     ? "#FF2625"
-                    : "rgba(255, 255, 255, 0.35)",
+                    : isDarkMode
+                      ? "rgba(255, 255, 255, 0.35)"
+                      : "#bdbdbd",
               }}
             />
           ))}
