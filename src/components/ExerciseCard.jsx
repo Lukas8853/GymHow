@@ -4,9 +4,11 @@ import { Button, Stack, Typography } from "@mui/material/";
 
 import placeholder from "../assets/images/placeholder.png";
 import ExerciseImage from "./ExerciseImage";
+import { getExerciseBodyParts } from "../utils/fetchData";
 
 const ExerciseCard = ({ exercise }) => {
-  console.log(exercise);
+  const bodyParts = getExerciseBodyParts(exercise).slice(0, 2);
+
   return (
     <Link className="exercise-card" to={`/exercise/${exercise.id}`}>
       <ExerciseImage
@@ -15,18 +17,21 @@ const ExerciseCard = ({ exercise }) => {
         alt={exercise.name}
       />
       <Stack direction="row">
-        <Button
-          sx={{
-            ml: "21px",
-            color: "#fff",
-            background: "#ffa9a9",
-            fontSize: "14px",
-            borderRadius: "20px",
-            textTransform: "capitalize",
-          }}
-        >
-          {exercise.bodyPart}
-        </Button>
+        {bodyParts.map((part, index) => (
+          <Button
+            key={part}
+            sx={{
+              ml: index === 0 ? "21px" : "8px",
+              color: "#fff",
+              background: "#ffa9a9",
+              fontSize: "14px",
+              borderRadius: "20px",
+              textTransform: "capitalize",
+            }}
+          >
+            {part}
+          </Button>
+        ))}
         <Button
           sx={{
             ml: "21px",

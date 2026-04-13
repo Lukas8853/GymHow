@@ -92,6 +92,12 @@ body {
     color: #9a9a9a !important;
   }
 
+  body.dark [style*="background-color: #fff"] .profile-favorite-count,
+  body.dark [style*="background-color:#fff"] .profile-favorite-count,
+  body.dark .light-surface .profile-favorite-count {
+    color: #2E7D32 !important;
+  }
+
   .profile-photo-action {
     width: 50%;
     padding: 11px;

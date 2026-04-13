@@ -6,6 +6,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import {
   EXERCISES_CACHE_KEY,
   fetchAllExercises,
+  getExerciseBodyParts,
   normalizeExercisesResponse,
   readCachedJson,
   writeCachedJson,
@@ -60,8 +61,7 @@ const Exercises = ({ exercises, setExercises, bodyPart }) => {
           ? allExercises
           : allExercises.filter(
               (exercise) =>
-                String(exercise?.bodyPart || "").toLowerCase() ===
-                normalizedBodyPart,
+                getExerciseBodyParts(exercise).includes(normalizedBodyPart),
             );
 
       setExercises(exercisesData);

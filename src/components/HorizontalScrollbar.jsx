@@ -1,13 +1,13 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
 import { Box } from "@mui/material";
 import { ScrollMenu, VisibilityContext } from "react-horizontal-scrolling-menu";
-
+ 
 import BodyPart from "./BodyPart";
 import ExerciseCard from "./ExerciseCard";
-
+ 
 const LeftArrow = ({ isCompact, onArrowNavigate }) => {
   const { scrollPrev } = useContext(VisibilityContext);
-
+ 
   return (
     <button
       type="button"
@@ -42,10 +42,10 @@ const LeftArrow = ({ isCompact, onArrowNavigate }) => {
     </button>
   );
 };
-
+ 
 const RightArrow = ({ isCompact, onArrowNavigate }) => {
   const { scrollNext } = useContext(VisibilityContext);
-
+ 
   return (
     <button
       type="button"
@@ -80,7 +80,7 @@ const RightArrow = ({ isCompact, onArrowNavigate }) => {
     </button>
   );
 };
-
+ 
 const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, isBodyParts }) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [dots, setDots] = useState([]);
@@ -89,139 +89,153 @@ const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, isBodyParts }) => {
   const dotClickLockRef = useRef({ targetIndex: null, startedAt: 0 });
   const syncTimeoutsRef = useRef([]);
   const itemIds = data.map((item) => String(item.id || item));
-
+ 
+  const DESKTOP_VISIBLE = 5;
+ 
   const clearPendingSyncTimeouts = () => {
     syncTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
     syncTimeoutsRef.current = [];
   };
-
+ 
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-
+ 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
+ 
   useEffect(() => {
     return () => {
       clearPendingSyncTimeouts();
     };
   }, []);
-
+ 
   const getMostVisibleIndex = (api, items) => {
     const visibleItems = api?.visibleItems || [];
     if (!items.length || !visibleItems.length) {
       return -1;
     }
-
+ 
     let bestIndex = -1;
     let bestRatio = -1;
-
+ 
     visibleItems.forEach((rawVisibleId) => {
       const visibleId = String(rawVisibleId);
       const itemMeta = api.getItemById?.(visibleId);
       const itemIndex = Number(itemMeta?.index);
       const ratio = Number(itemMeta?.entry?.intersectionRatio ?? 0);
-
+ 
       if (!Number.isInteger(itemIndex) || itemIndex < 0) {
         return;
       }
-
+ 
       if (ratio > bestRatio) {
         bestRatio = ratio;
         bestIndex = itemIndex;
       }
     });
-
+ 
     if (bestIndex >= 0) {
       return Math.min(items.length - 1, bestIndex);
     }
-
+ 
     const fallbackVisibleId = String(visibleItems[0]);
     const fallbackIndex = items.findIndex(
       (itemId) => itemId === fallbackVisibleId,
     );
     return fallbackIndex;
   };
-
+ 
   const syncDots = (api) => {
-    if (!isBodyParts || !api) {
-      return;
-    }
-
+    if (!isBodyParts || !api) return;
     apiRef.current = api;
-
+ 
     const items = itemIds;
     const visibleItems = api.visibleItems || [];
-    const visibleCount = Math.max(1, visibleItems.length || 1);
+ 
     const totalPages = isMobile
       ? Math.max(1, items.length)
-      : Math.max(1, Math.ceil(items.length / visibleCount));
+      : Math.ceil(items.length / DESKTOP_VISIBLE);
+ 
     const pageIndexes = Array.from({ length: totalPages }, (_, index) => index);
-
     setDots(pageIndexes);
-
-    if (!items.length) {
-      setActiveDotIndex(0);
+ 
+    if (!items.length || !visibleItems.length) return;
+ 
+    // If the last item is visible, always snap to the last dot
+    const isLastItemVisible = visibleItems
+      .map(String)
+      .includes(String(items[items.length - 1]));
+ 
+    if (isLastItemVisible) {
+      const { targetIndex, startedAt } = dotClickLockRef.current;
+      if (targetIndex !== null) {
+        const elapsed = Date.now() - startedAt;
+        const isExpired = elapsed > 500;
+        if (!isExpired) {
+          dotClickLockRef.current = { targetIndex: null, startedAt: 0 };
+        }
+      }
+      setActiveDotIndex(totalPages - 1);
       return;
     }
-
-    if (!visibleItems.length) {
-      return;
-    }
-
+ 
     const mostVisibleIndex = getMostVisibleIndex(api, items);
-    if (mostVisibleIndex < 0) {
-      return;
-    }
-
+    if (mostVisibleIndex < 0) return;
+ 
     const nextActiveIndex = Math.min(
       totalPages - 1,
       isMobile
         ? Math.max(0, mostVisibleIndex)
-        : Math.max(0, Math.round(mostVisibleIndex / visibleCount)),
+        : Math.max(0, Math.round(mostVisibleIndex / DESKTOP_VISIBLE)),
     );
-
+ 
     const { targetIndex, startedAt } = dotClickLockRef.current;
     if (targetIndex !== null) {
       const elapsed = Date.now() - startedAt;
       const isTargetReached = nextActiveIndex === targetIndex;
       const isExpired = elapsed > 500;
-
-      if (!isTargetReached && !isExpired) {
-        return;
-      }
-
+ 
+      if (!isTargetReached && !isExpired) return;
+ 
       dotClickLockRef.current = { targetIndex: null, startedAt: 0 };
     }
-
+ 
     setActiveDotIndex(nextActiveIndex);
   };
-
+ 
   const handleDotClick = (pageIndex) => {
-    if (!apiRef.current) {
-      return;
-    }
-
+    if (!apiRef.current) return;
+ 
     const items = itemIds;
-    const visibleItems = apiRef.current.visibleItems || [];
-    const visibleCount = Math.max(1, visibleItems.length || 1);
-    const targetIndex = isMobile
-      ? Math.min(items.length - 1, pageIndex)
-      : Math.min(items.length - 1, pageIndex * visibleCount);
+    const totalPages = isMobile
+      ? Math.max(1, items.length)
+      : Math.ceil(items.length / DESKTOP_VISIBLE);
+ 
+    const isLastPage = pageIndex === totalPages - 1;
+ 
+    const targetIndex = isLastPage
+      ? items.length - 1
+      : isMobile
+        ? Math.min(items.length - 1, pageIndex)
+        : Math.min(items.length - 1, pageIndex * DESKTOP_VISIBLE);
+ 
     const targetId = items[targetIndex];
     const targetItem = apiRef.current.getItemElementById?.(targetId);
-
-    if (!targetItem || !apiRef.current.scrollToItem) {
-      return;
-    }
-
-    apiRef.current.scrollToItem(targetItem, "smooth", "start", "nearest");
+ 
+    if (!targetItem || !apiRef.current.scrollToItem) return;
+ 
+    apiRef.current.scrollToItem(
+      targetItem,
+      "smooth",
+      isLastPage ? "end" : "start",
+      "nearest",
+    );
     dotClickLockRef.current = { targetIndex: pageIndex, startedAt: Date.now() };
     setActiveDotIndex(pageIndex);
-
+ 
     clearPendingSyncTimeouts();
     [120, 300, 520].forEach((delay) => {
       const timeoutId = setTimeout(() => {
@@ -232,19 +246,10 @@ const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, isBodyParts }) => {
       syncTimeoutsRef.current.push(timeoutId);
     });
   };
-
-  const handleArrowNavigate = (direction) => {
+ 
+  const handleArrowNavigate = () => {
     dotClickLockRef.current = { targetIndex: null, startedAt: 0 };
-
-    if (isBodyParts && dots.length > 0) {
-      const maxIndex = dots.length - 1;
-      setActiveDotIndex((prev) =>
-        direction === "next"
-          ? Math.min(maxIndex, prev + 1)
-          : Math.max(0, prev - 1),
-      );
-    }
-
+ 
     clearPendingSyncTimeouts();
     [120, 300, 520].forEach((delay) => {
       const timeoutId = setTimeout(() => {
@@ -255,7 +260,7 @@ const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, isBodyParts }) => {
       syncTimeoutsRef.current.push(timeoutId);
     });
   };
-
+ 
   const margin = isBodyParts
     ? isMobile
       ? "0 6px"
@@ -263,7 +268,7 @@ const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, isBodyParts }) => {
     : isMobile
       ? "0 8px"
       : "0 40px";
-
+ 
   if (!isBodyParts) {
     return (
       <ScrollMenu LeftArrow={LeftArrow} RightArrow={RightArrow}>
@@ -288,27 +293,27 @@ const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, isBodyParts }) => {
       </ScrollMenu>
     );
   }
-
+ 
   return (
     <Box sx={{ position: "relative", pb: isBodyParts ? 4 : 0 }}>
       <ScrollMenu
         LeftArrow={() => (
           <LeftArrow
             isCompact={isMobile}
-            onArrowNavigate={() => handleArrowNavigate("prev")}
+            onArrowNavigate={handleArrowNavigate}
           />
         )}
         RightArrow={() => (
           <RightArrow
             isCompact={isMobile}
-            onArrowNavigate={() => handleArrowNavigate("next")}
+            onArrowNavigate={handleArrowNavigate}
           />
         )}
         apiRef={apiRef}
         onInit={syncDots}
         onUpdate={syncDots}
       >
-        {data.map((item, index) => (
+        {data.map((item) => (
           <Box
             key={String(item.id || item)}
             itemId={String(item.id || item)}
@@ -327,7 +332,7 @@ const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, isBodyParts }) => {
           </Box>
         ))}
       </ScrollMenu>
-
+ 
       {isBodyParts && dots.length > 1 && (
         <Box
           sx={{
@@ -364,5 +369,5 @@ const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, isBodyParts }) => {
     </Box>
   );
 };
-
+ 
 export default HorizontalScrollbar;

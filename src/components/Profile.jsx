@@ -1112,10 +1112,11 @@ const Profile = () => {
               }}
             >
               <Typography
+                className="profile-favorite-count"
                 sx={{
                   fontSize: "28px",
                   fontWeight: 800,
-                  color: isDarkMode ? "#fff" : "#5ebb4c",
+                  color: "#5ebb4c",
                 }}
               >
                 {favoriteCount}

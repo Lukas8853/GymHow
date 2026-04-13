@@ -9,6 +9,7 @@ import {
   fetchAllExercises,
   filterExercisesByQuery,
   getBodyPartsFromExercises,
+  getExerciseBodyParts,
   readCachedJson,
   writeCachedJson,
 } from "../utils/fetchData";
@@ -106,8 +107,8 @@ const PageExercises = () => {
     }
 
     return queryFiltered.filter((exercise) =>
-      selectedBodyParts.includes(
-        (exercise?.bodyPart || "").trim().toLowerCase(),
+      getExerciseBodyParts(exercise).some((part) =>
+        selectedBodyParts.includes(part),
       ),
     );
   }, [exercises, searchQuery, selectedBodyParts]);
@@ -115,6 +116,110 @@ const PageExercises = () => {
   const groupedExercises = useMemo(() => {
     if (!Array.isArray(filteredExercises)) {
       return [];
+    }
+
+    if (exerciseSortOrder === "common") {
+      const normalize = (value) => String(value || "").trim().toLowerCase();
+      const toLabel = (value) =>
+        String(value || "")
+          .trim()
+          .split(" ")
+          .filter(Boolean)
+          .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+          .join(" ");
+
+      const selectedSet = new Set(selectedBodyParts.map((part) => normalize(part)));
+
+      const targetToBodyParts = new Map();
+      filteredExercises.forEach((exercise) => {
+        const bodyParts = getExerciseBodyParts(exercise).map((part) =>
+          normalize(part),
+        );
+        const target = normalize(exercise?.target);
+
+        if (bodyParts.length === 0 || !target) {
+          return;
+        }
+
+        if (!targetToBodyParts.has(target)) {
+          targetToBodyParts.set(target, new Set());
+        }
+
+        bodyParts.forEach((part) => targetToBodyParts.get(target).add(part));
+      });
+
+      const groupsByKey = new Map();
+
+      filteredExercises.forEach((exercise) => {
+        const bodyParts = getExerciseBodyParts(exercise).map((part) =>
+          normalize(part),
+        );
+        const target = normalize(exercise?.target);
+
+        if (bodyParts.length === 0) {
+          return;
+        }
+
+        const candidateParts = targetToBodyParts.has(target)
+          ? Array.from(targetToBodyParts.get(target))
+          : bodyParts;
+
+        const scopedParts =
+          selectedSet.size > 0
+            ? candidateParts.filter((part) => selectedSet.has(part))
+            : candidateParts;
+
+        const finalParts = (
+          scopedParts.length > 0 ? scopedParts : bodyParts
+        ).sort((a, b) => a.localeCompare(b));
+
+        const comboKey = finalParts.join("|");
+        const selectedCount =
+          selectedSet.size > 0
+            ? selectedSet.size
+            : new Set(
+                filteredExercises.flatMap((item) =>
+                  getExerciseBodyParts(item).map((part) => normalize(part)),
+                ),
+              ).size;
+
+        if (!groupsByKey.has(comboKey)) {
+          groupsByKey.set(comboKey, {
+            letter: `${finalParts.map(toLabel).join(" & ")} (${finalParts.length}/${Math.max(
+              1,
+              selectedCount,
+            )})`,
+            coverage: finalParts.length,
+            items: [],
+          });
+        }
+
+        groupsByKey.get(comboKey).items.push(exercise);
+      });
+
+      const groups = Array.from(groupsByKey.values())
+        .map((group) => ({
+          ...group,
+          items: [...group.items].sort((a, b) =>
+            (a.name || "").localeCompare(b.name || "", undefined, {
+              sensitivity: "base",
+            }),
+          ),
+        }))
+        .sort((a, b) => {
+          if (b.coverage !== a.coverage) {
+            return b.coverage - a.coverage;
+          }
+
+          if (b.items.length !== a.items.length) {
+            return b.items.length - a.items.length;
+          }
+
+          return a.letter.localeCompare(b.letter);
+        })
+        .map(({ letter, items }) => ({ letter, items }));
+
+      return groups;
     }
 
     const sortedExercises = [...filteredExercises].sort((a, b) =>
@@ -206,7 +311,12 @@ const PageExercises = () => {
   return (
     <Box mt="50px" p="20px" pb="120px">
       <Typography variant="h3" mb="30px">
-        Exercises {exerciseSortOrder === "za" ? "Z-A" : "A-Z"}
+        Exercises
+        {exerciseSortOrder === "common"
+          ? " Common"
+          : exerciseSortOrder === "za"
+            ? " Z-A"
+            : " A-Z"}
       </Typography>
       <Typography variant="body1" color="text.secondary" mb="20px">
         Total exercises: {filteredExercises.length}

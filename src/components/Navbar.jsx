@@ -409,7 +409,13 @@ const Navbar = () => {
                       justifyContent: "center",
                     }}
                     aria-label="Sort exercises"
-                    title={`Sort: ${exerciseSortOrder === "az" ? "A-Z" : "Z-A"}`}
+                    title={`Sort: ${
+                      exerciseSortOrder === "az"
+                        ? "A-Z"
+                        : exerciseSortOrder === "za"
+                          ? "Z-A"
+                          : "Common"
+                    }`}
                   >
                     <FilterListOutlinedIcon fontSize="small" />
                   </button>
@@ -504,6 +510,33 @@ const Navbar = () => {
                         }}
                       >
                         Uzlazno (Z-A)
+                      </button>
+                      <button
+                        onClick={() => {
+                          setExerciseSortOrder("common");
+                          setIsSortMenuOpen(false);
+                        }}
+                        style={{
+                          height: "34px",
+                          border: isDarkMode
+                            ? "1px solid rgba(255, 255, 255, 0.08)"
+                            : "1px solid rgba(0, 0, 0, 0.06)",
+                          borderRadius: "8px",
+                          backgroundColor:
+                            exerciseSortOrder === "common"
+                              ? isDarkMode
+                                ? "rgba(255, 99, 99, 0.26)"
+                                : "#ffe9e9"
+                              : isDarkMode
+                                ? "#161b22"
+                                : "#f8f8f8",
+                          color: isDarkMode ? "#f3f4f6" : "#1f1f1f",
+                          cursor: "pointer",
+                          textAlign: "left",
+                          padding: "0 10px",
+                        }}
+                      >
+                        Common
                       </button>
 
                       <Typography

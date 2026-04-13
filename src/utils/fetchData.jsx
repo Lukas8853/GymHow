@@ -117,6 +117,88 @@ const normalizeList = (value) => {
   return [];
 };
 
+const uniqueNormalizedList = (values) =>
+  Array.from(
+    new Set(
+      (Array.isArray(values) ? values : [values])
+        .map((value) => normalizeText(value))
+        .filter(Boolean),
+    ),
+  );
+
+const inferSecondaryBodyParts = ({ name, target, bodyPart }) => {
+  const normalizedName = normalizeText(name);
+  const normalizedTarget = normalizeText(target);
+  const primary = normalizeText(bodyPart);
+
+  const inferred = new Set();
+
+  if (
+    /bench press|chest press|push-up|push up|fly|dip/.test(normalizedName) ||
+    normalizedTarget === "pectorals"
+  ) {
+    inferred.add("chest");
+    inferred.add("upper arms");
+  }
+
+  if (
+    /overhead press|shoulder press|arnold press|lateral raise/.test(
+      normalizedName,
+    ) ||
+    normalizedTarget === "delts"
+  ) {
+    inferred.add("shoulders");
+    inferred.add("upper arms");
+  }
+
+  if (
+    /row|pulldown|pull-up|pull up|chin-up|chin up/.test(normalizedName) ||
+    normalizedTarget === "lats"
+  ) {
+    inferred.add("back");
+    inferred.add("upper arms");
+  }
+
+  if (/deadlift/.test(normalizedName)) {
+    inferred.add("back");
+    inferred.add("upper legs");
+    inferred.add("waist");
+  }
+
+  if (/squat|lunge|leg press/.test(normalizedName)) {
+    inferred.add("upper legs");
+    inferred.add("waist");
+  }
+
+  inferred.delete(primary);
+  return Array.from(inferred);
+};
+
+export const getExerciseBodyParts = (exercise) => {
+  if (!exercise) {
+    return [];
+  }
+
+  const explicitBodyParts = uniqueNormalizedList(
+    exercise?.bodyParts || exercise?.body_parts || exercise?.muscles,
+  );
+  const primaryBodyPart = normalizeText(
+    exercise?.bodyPart || exercise?.body_part || exercise?.bodypart,
+  );
+
+  const merged = uniqueNormalizedList([
+    ...explicitBodyParts,
+    primaryBodyPart,
+    ...inferSecondaryBodyParts({
+      name: exercise?.name,
+      target: exercise?.target,
+      bodyPart: primaryBodyPart,
+    }),
+  ]);
+
+  return merged;
+};
+
 const normalizeId = (exercise) => {
   const candidate =
     exercise?.id ??
@@ -315,13 +397,19 @@ const normalizeExercise = (exercise) => {
       ? rawGifUrl
       : getExerciseAnimationUrl(id);
 
+  const bodyParts = getExerciseBodyParts({
+    ...exercise,
+    name,
+    target,
+    bodyPart,
+  });
+
   return {
     ...exercise,
     id,
     name: String(name || "").trim(),
-    bodyPart: String(bodyPart || "")
-      .trim()
-      .toLowerCase(),
+    bodyPart: bodyParts[0] || String(bodyPart || "").trim().toLowerCase(),
+    bodyParts,
     target: String(target || "")
       .trim()
       .toLowerCase(),
@@ -388,6 +476,7 @@ export const filterExercisesByQuery = (exercises, query) => {
       exercise?.target,
       exercise?.equipment,
       exercise?.bodyPart,
+      ...(Array.isArray(exercise?.bodyParts) ? exercise.bodyParts : []),
     ]
       .map((value) => normalizeText(value))
       .join(" ");
@@ -403,9 +492,15 @@ export const getBodyPartsFromExercises = (exercises) => {
 
   return Array.from(
     new Set(
-      exercises
-        .map((exercise) => normalizeText(exercise?.bodyPart))
-        .filter(Boolean),
+      exercises.flatMap((exercise) => {
+        const parts = getExerciseBodyParts(exercise);
+        if (parts.length > 0) {
+          return parts;
+        }
+
+        const fallback = normalizeText(exercise?.bodyPart);
+        return fallback ? [fallback] : [];
+      }),
     ),
   ).sort((a, b) => a.localeCompare(b));
 };
