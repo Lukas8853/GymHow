@@ -4,7 +4,15 @@
     "exercises": "Exercises",
     "profile": "Profile",
     "settings": "Settings",
-    "login": "Login"
+    "login": "Login",
+    "filter": {
+      "sortExercises": "Sort exercises",
+      "sort": "Sort",
+      "ascendingAz": "Ascending (A-Z)",
+      "descendingZa": "Descending (Z-A)",
+      "common": "Common",
+      "bodyPart": "Body part"
+    }
   },
   "profile": {
     "title": "My profile",

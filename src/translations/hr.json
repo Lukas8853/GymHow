@@ -4,7 +4,15 @@
     "exercises": "Vježbe",
     "profile": "Profil",
     "settings": "Postavke",
-    "login": "Prijava"
+    "login": "Prijava",
+    "filter": {
+      "sortExercises": "Sortiraj vježbe",
+      "sort": "Sortiranje",
+      "ascendingAz": "Uzlazno (A-Z)",
+      "descendingZa": "Silazno (Z-A)",
+      "common": "Najčešće",
+      "bodyPart": "Dio tijela"
+    }
   },
   "profile": {
     "title": "Moj profil",

@@ -48,10 +48,10 @@ const Navbar = () => {
     location.pathname.startsWith("/exercise/");
 
   const pageTitle = isProfilePage
-    ? "Profile"
+    ? t("navbar.profile")
     : isExercisesPage
-      ? "Exercises"
-      : "Home";
+      ? t("navbar.exercises")
+      : t("navbar.home");
 
   const selectedBodyParts = (() => {
     const params = new URLSearchParams(location.search);
@@ -79,19 +79,19 @@ const Navbar = () => {
 
   const desktopTabs = [
     {
-      label: "Profile",
+      label: t("navbar.profile"),
       path: "/Profile",
       isActive: isProfilePage,
       icon: PersonOutlineOutlinedIcon,
     },
     {
-      label: "Home",
+      label: t("navbar.home"),
       path: "/",
       isActive: isHomePage,
       icon: HomeOutlinedIcon,
     },
     {
-      label: "Exercises",
+      label: t("navbar.exercises"),
       path: "/Exercises",
       isActive: isExercisesPage,
       icon: SportsGymnasticsOutlinedIcon,
@@ -417,13 +417,13 @@ const Navbar = () => {
                       alignItems: "center",
                       justifyContent: "center",
                     }}
-                    aria-label="Sort exercises"
-                    title={`Sort: ${
+                    aria-label={t("navbar.filter.sortExercises")}
+                    title={`${t("navbar.filter.sort")}: ${
                       exerciseSortOrder === "az"
-                        ? "A-Z"
+                        ? t("navbar.filter.ascendingAz")
                         : exerciseSortOrder === "za"
-                          ? "Z-A"
-                          : "Common"
+                          ? t("navbar.filter.descendingZa")
+                          : t("navbar.filter.common")
                     }`}
                   >
                     <FilterListOutlinedIcon fontSize="small" />
@@ -444,9 +444,10 @@ const Navbar = () => {
                         border: isDarkMode
                           ? "1px solid rgba(255, 255, 255, 0.12)"
                           : "1px solid rgba(0, 0, 0, 0.08)",
-                        p: "6px",
-                        minWidth: "200px",
-                        maxHeight: "320px",
+                        p: "8px",
+                        gap: "6px",
+                        minWidth: "230px",
+                        maxHeight: "360px",
                         overflowY: "auto",
                         zIndex: 10000,
                       }}
@@ -463,7 +464,7 @@ const Navbar = () => {
                           letterSpacing: "0.04em",
                         }}
                       >
-                        Sort
+                        {t("navbar.filter.sort")}
                       </Typography>
 
                       <button
@@ -489,9 +490,10 @@ const Navbar = () => {
                           cursor: "pointer",
                           textAlign: "left",
                           padding: "0 10px",
+                          fontSize: "14px",
                         }}
                       >
-                        Silazno (A-Z)
+                        {t("navbar.filter.ascendingAz")}
                       </button>
                       <button
                         onClick={() => {
@@ -516,9 +518,10 @@ const Navbar = () => {
                           cursor: "pointer",
                           textAlign: "left",
                           padding: "0 10px",
+                          fontSize: "14px",
                         }}
                       >
-                        Uzlazno (Z-A)
+                        {t("navbar.filter.descendingZa")}
                       </button>
                       <button
                         onClick={() => {
@@ -543,9 +546,10 @@ const Navbar = () => {
                           cursor: "pointer",
                           textAlign: "left",
                           padding: "0 10px",
+                          fontSize: "14px",
                         }}
                       >
-                        Common
+                        {t("navbar.filter.common")}
                       </button>
 
                       <Typography
@@ -560,7 +564,7 @@ const Navbar = () => {
                           letterSpacing: "0.04em",
                         }}
                       >
-                        Body part
+                        {t("navbar.filter.bodyPart")}
                       </Typography>
 
                       {bodyPartOptions.map((bodyPart) => (
@@ -590,6 +594,7 @@ const Navbar = () => {
                             gap: "8px",
                             padding: "0 10px",
                             textTransform: "capitalize",
+                            fontSize: "14px",
                             fontWeight: (
                               bodyPart === "all"
                                 ? isAllBodyPartsSelected
@@ -619,7 +624,7 @@ const Navbar = () => {
                               flexShrink: 0,
                             }}
                           />
-                          {bodyPart}
+                          {t(`bodyParts.${bodyPart}`, bodyPart)}
                         </label>
                       ))}
                     </Stack>
