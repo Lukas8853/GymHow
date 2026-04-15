@@ -1,5 +1,5 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Box, Stack, Typography } from "@mui/material";
 import Pagination from "@mui/material/Pagination";
 
@@ -24,9 +24,10 @@ const EXERCISES_PER_PAGE = 25;
 const PageExercises = () => {
   const [exercises, setExercises] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
   const { exerciseSortOrder, isDarkMode } = useContext(AppContext);
   const location = useLocation();
+  const navigate = useNavigate();
+  const didMountRef = useRef(false);
 
   const searchQuery = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -55,6 +56,36 @@ const PageExercises = () => {
 
     return [];
   }, [location.search]);
+
+  const selectedBodyPartsKey = useMemo(
+    () => selectedBodyParts.join(","),
+    [selectedBodyParts],
+  );
+
+  const currentPage = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const parsedPage = Number(params.get("page"));
+    return Number.isInteger(parsedPage) && parsedPage >= 1 ? parsedPage : 1;
+  }, [location.search]);
+
+  const setPageInUrl = (nextPage, replace = false) => {
+    const params = new URLSearchParams(location.search);
+
+    if (nextPage <= 1) {
+      params.delete("page");
+    } else {
+      params.set("page", String(nextPage));
+    }
+
+    const nextSearch = params.toString();
+    navigate(
+      {
+        pathname: location.pathname,
+        search: nextSearch ? `?${nextSearch}` : "",
+      },
+      { replace },
+    );
+  };
 
   useEffect(() => {
     const loadExercises = async () => {
@@ -292,19 +323,33 @@ const PageExercises = () => {
   const totalPages = groupedExercisePages.length;
 
   useEffect(() => {
-    setCurrentPage(1);
-  }, [exerciseSortOrder, searchQuery, selectedBodyParts]);
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
+
+    setPageInUrl(1, true);
+  }, [exerciseSortOrder, searchQuery, selectedBodyPartsKey]);
 
   useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
+    if (isLoading) {
+      return;
     }
-  }, [currentPage, totalPages]);
+
+    if (currentPage < 1) {
+      setPageInUrl(1, true);
+      return;
+    }
+
+    if (currentPage > totalPages) {
+      setPageInUrl(totalPages, true);
+    }
+  }, [currentPage, totalPages, isLoading]);
 
   const paginatedGroups = groupedExercisePages[currentPage - 1] || [];
 
   const handlePageChange = (event, value) => {
-    setCurrentPage(value);
+    setPageInUrl(value);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
