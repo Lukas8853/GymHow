@@ -6,10 +6,60 @@
     "settings": "Settings",
     "login": "Login"
   },
-  "profile":{
-    "title":"My profile",
+  "profile": {
+    "title": "My profile",
+    "loginPrompt": "Log in to track your favorite exercises and personalize the app.",
+    "logout": "Log out",
+    "userFallback": "User",
+    "favoriteExercises": "Favorite exercises",
     "favorites": "Favorites",
-    "noFavorites": "You have no favorite exercises yet."
+    "noFavorites": "You have no favorite exercises yet.",
+    "favoritesApiUnavailable": "We cannot load favorite exercise details right now (API limit).",
+    "tryAgainSoon": "Please try again in a minute.",
+    "unresolvedFavorites": "Some favorite exercises ({{count}}) are currently unavailable due to API limits.",
+    "birthDate": "Birth date",
+    "auth": {
+      "loginTitle": "Login",
+      "registerTitle": "Register",
+      "continueWithGoogle": "Continue with Google",
+      "or": "or",
+      "username": "Username",
+      "password": "Password",
+      "login": "Login",
+      "register": "Register",
+      "createAccount": "Create account",
+      "noAccount": "Don't have an account? ",
+      "alreadyHaveAccount": "Already have an account? ",
+      "errors": {
+        "googleLoginFailed": "Google login failed. Please try again.",
+        "invalidEmailOrPassword": "Wrong email or password.",
+        "enterUsername": "Enter a username.",
+        "passwordMinLength": "Password must be at least 6 characters.",
+        "emailAlreadyInUse": "Email is already in use.",
+        "registerFailed": "Registration failed. Please try again."
+      }
+    },
+    "edit": {
+      "title": "Edit profile",
+      "takePhoto": "Take a photo",
+      "galleryUpload": "Gallery / Upload",
+      "newPhotoSelected": "A new profile photo has been selected.",
+      "saving": "Saving...",
+      "saveChanges": "Save changes",
+      "success": "Profile updated successfully.",
+      "errors": {
+        "onlyImage": "You can only choose an image for your profile photo.",
+        "maxImageSize": "Image is too large. Maximum size is 5 MB.",
+        "enterEmail": "Enter an email.",
+        "userNotLoggedIn": "User is not logged in.",
+        "requiresRecentLogin": "To change email, please log in again (log out and log back in).",
+        "imageLoadFailed": "Image loading failed. Please try again.",
+        "canvasUnavailable": "Image preview is not supported in this browser.",
+        "compressionFailed": "Image compression failed. Choose a different image.",
+        "imageTooLargeAfterCompression": "Image is still too large. Choose a smaller image or screenshot.",
+        "saveFailed": "Saving changes failed. Please try again."
+      }
+    }
   },
   "heroBanner": {
     "fitnessClub": "Fitness Club",

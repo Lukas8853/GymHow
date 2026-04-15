@@ -6,11 +6,61 @@
     "settings": "Postavke",
     "login": "Prijava"
   },
-  "profile":{
-      "title":"Moj profil",
-      "favorites": "Omiljene vježbe",
-      "noFavorites": "Nemate omiljenje vježbe još."
+  "profile": {
+    "title": "Moj profil",
+    "loginPrompt": "Prijavi se kako bi pratio svoje omiljene vježbe i personalizirao aplikaciju.",
+    "logout": "Odjavi se",
+    "userFallback": "Korisnik",
+    "favoriteExercises": "Omiljenih vježbi",
+    "favorites": "Omiljene vježbe",
+    "noFavorites": "Nemate omiljene vježbe još.",
+    "favoritesApiUnavailable": "Trenutno ne mogu dohvatiti detalje omiljenih vježbi (API limit).",
+    "tryAgainSoon": "Probajte ponovno za minutu.",
+    "unresolvedFavorites": "Neke omiljene vježbe ({{count}}) trenutno nisu učitane zbog API ograničenja.",
+    "birthDate": "Datum rođenja",
+    "auth": {
+      "loginTitle": "Prijava",
+      "registerTitle": "Registracija",
+      "continueWithGoogle": "Nastavi s Google računom",
+      "or": "ili",
+      "username": "Korisničko ime",
+      "password": "Lozinka",
+      "login": "Prijavi se",
+      "register": "Registriraj se",
+      "createAccount": "Stvori račun",
+      "noAccount": "Nemaš račun? ",
+      "alreadyHaveAccount": "Već imaš račun? ",
+      "errors": {
+        "googleLoginFailed": "Google prijava nije uspjela. Pokušaj ponovo.",
+        "invalidEmailOrPassword": "Pogrešan email ili lozinka.",
+        "enterUsername": "Unesite korisničko ime.",
+        "passwordMinLength": "Lozinka mora imati najmanje 6 znakova.",
+        "emailAlreadyInUse": "Email je već u upotrebi.",
+        "registerFailed": "Registracija nije uspjela. Pokušaj ponovo."
+      }
     },
+    "edit": {
+      "title": "Uredi profil",
+      "takePhoto": "Slikaj kamerom",
+      "galleryUpload": "Galerija / Upload",
+      "newPhotoSelected": "Nova profilna je odabrana.",
+      "saving": "Spremam...",
+      "saveChanges": "Spremi promjene",
+      "success": "Profil je uspješno ažuriran.",
+      "errors": {
+        "onlyImage": "Možete odabrati samo sliku za profilnu.",
+        "maxImageSize": "Slika je prevelika. Maksimalna veličina je 5 MB.",
+        "enterEmail": "Unesite email.",
+        "userNotLoggedIn": "Korisnik nije prijavljen.",
+        "requiresRecentLogin": "Za promjenu emaila se morate ponovno prijaviti (odjavite se pa prijavite).",
+        "imageLoadFailed": "Učitavanje slike nije uspjelo. Pokušaj ponovno.",
+        "canvasUnavailable": "Pregled slike nije podržan u ovom pregledniku.",
+        "compressionFailed": "Kompresija slike nije uspjela. Odaberi drugu sliku.",
+        "imageTooLargeAfterCompression": "Slika je prevelika. Odaberi manju sliku ili screenshot.",
+        "saveFailed": "Spremanje promjena nije uspjelo. Pokušaj ponovo."
+      }
+    }
+  },
   "heroBanner": {
   "fitnessClub": "Fitness Klub",
   "title": "Znoji se, nasmiješi <br /> i ponovi",

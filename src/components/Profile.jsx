@@ -56,6 +56,7 @@ async function saveUserToFirestore(firebaseUser, extraData = {}) {
 
 // ─── Auth Modal (bottom sheet) ───────────────────────────────────────────────
 const AuthModal = ({ onClose }) => {
+  const { t } = useTranslation();
   const [mode, setMode] = useState("login"); // "login" | "register"
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -75,7 +76,7 @@ const AuthModal = ({ onClose }) => {
       await refreshUserProfile();
       onClose();
     } catch (err) {
-      setError("Google prijava nije uspjela. Pokušaj ponovo.");
+      setError(t("profile.auth.errors.googleLoginFailed"));
     } finally {
       setLoading(false);
     }
@@ -89,7 +90,7 @@ const AuthModal = ({ onClose }) => {
       await refreshUserProfile();
       onClose();
     } catch (err) {
-      setError("Pogrešan email ili lozinka.");
+      setError(t("profile.auth.errors.invalidEmailOrPassword"));
     } finally {
       setLoading(false);
     }
@@ -97,11 +98,11 @@ const AuthModal = ({ onClose }) => {
 
   const handleRegister = async () => {
     if (!displayName.trim()) {
-      setError("Unesite korisničko ime.");
+      setError(t("profile.auth.errors.enterUsername"));
       return;
     }
     if (password.length < 6) {
-      setError("Lozinka mora imati najmanje 6 znakova.");
+      setError(t("profile.auth.errors.passwordMinLength"));
       return;
     }
     setLoading(true);
@@ -119,9 +120,9 @@ const AuthModal = ({ onClose }) => {
     } catch (err) {
       console.log("Register error:", err.code, err.message);
       if (err.code === "auth/email-already-in-use") {
-        setError("Email je već u upotrebi.");
+        setError(t("profile.auth.errors.emailAlreadyInUse"));
       } else {
-        setError("Registracija nije uspjela. Pokušaj ponovo.");
+        setError(t("profile.auth.errors.registerFailed"));
       }
     } finally {
       setLoading(false);
@@ -208,7 +209,9 @@ const AuthModal = ({ onClose }) => {
           mb={3}
         >
           <Typography sx={{ fontSize: "22px", fontWeight: 800 }}>
-            {mode === "login" ? "Prijava" : "Registracija"}
+            {mode === "login"
+              ? t("profile.auth.loginTitle")
+              : t("profile.auth.registerTitle")}
           </Typography>
           <IconButton onClick={onClose} size="small">
             <CloseIcon />
@@ -222,13 +225,15 @@ const AuthModal = ({ onClose }) => {
           disabled={loading}
         >
           <GoogleIcon sx={{ fontSize: "20px", color: "#EA4335" }} />
-          Nastavi s Google računom
+          {t("profile.auth.continueWithGoogle")}
         </button>
 
         {/* Separator */}
         <Stack direction="row" alignItems="center" spacing={1} sx={{ my: 2.5 }}>
           <Divider sx={{ flex: 1 }} />
-          <Typography sx={{ color: "#aaa", fontSize: "13px" }}>ili</Typography>
+          <Typography sx={{ color: "#aaa", fontSize: "13px" }}>
+            {t("profile.auth.or")}
+          </Typography>
           <Divider sx={{ flex: 1 }} />
         </Stack>
 
@@ -237,7 +242,7 @@ const AuthModal = ({ onClose }) => {
           {mode === "register" && (
             <input
               style={inputStyle}
-              placeholder="Korisničko ime"
+              placeholder={t("profile.auth.username")}
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
             />
@@ -256,7 +261,7 @@ const AuthModal = ({ onClose }) => {
             <input
               style={{ ...inputStyle, paddingRight: "48px" }}
               type={showPassword ? "text" : "password"}
-              placeholder="Lozinka"
+              placeholder={t("profile.auth.password")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => {
@@ -288,7 +293,7 @@ const AuthModal = ({ onClose }) => {
               <Typography
                 sx={{ fontSize: "12px", color: "#888", mb: 0.5, ml: 0.5 }}
               >
-                Datum rođenja
+                {t("profile.birthDate")}
               </Typography>
               <input
                 style={inputStyle}
@@ -315,9 +320,9 @@ const AuthModal = ({ onClose }) => {
             {loading ? (
               <CircularProgress size={20} sx={{ color: "#fff" }} />
             ) : mode === "login" ? (
-              "Prijavi se"
+              t("profile.auth.login")
             ) : (
-              "Stvori račun"
+              t("profile.auth.createAccount")
             )}
           </button>
         </Stack>
@@ -326,7 +331,9 @@ const AuthModal = ({ onClose }) => {
         <Typography
           sx={{ textAlign: "center", mt: 2.5, fontSize: "14px", color: "#666" }}
         >
-          {mode === "login" ? "Nemaš račun? " : "Već imaš račun? "}
+          {mode === "login"
+            ? t("profile.auth.noAccount")
+            : t("profile.auth.alreadyHaveAccount")}
           <span
             onClick={() => {
               setMode(mode === "login" ? "register" : "login");
@@ -334,7 +341,9 @@ const AuthModal = ({ onClose }) => {
             }}
             style={{ color: "#5ebb4c", fontWeight: 700, cursor: "pointer" }}
           >
-            {mode === "login" ? "Registriraj se" : "Prijavi se"}
+            {mode === "login"
+              ? t("profile.auth.register")
+              : t("profile.auth.login")}
           </span>
         </Typography>
       </Box>
@@ -343,6 +352,7 @@ const AuthModal = ({ onClose }) => {
 };
 
 const EditProfileModal = ({ onClose, user, userProfile }) => {
+  const { t } = useTranslation();
   const { refreshUserProfile, isDarkMode } = useContext(AppContext);
   const cameraInputRef = useRef(null);
   const galleryInputRef = useRef(null);
@@ -386,7 +396,7 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
 
         const context = canvas.getContext("2d");
         if (!context) {
-          throw new Error("Canvas context nije dostupan.");
+          throw new Error("canvas-context-unavailable");
         }
 
         context.drawImage(image, 0, 0, canvas.width, canvas.height);
@@ -405,12 +415,12 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
           }
 
           if (!dataURL || dataURL.length < 100) {
-            reject(new Error("Kompresija slike nije uspjela."));
+            reject(new Error("image-compression-failed"));
             return;
           }
 
           if (dataURL.length > MAX_DATA_URL_LENGTH) {
-            reject(new Error("Slika je i dalje prevelika nakon kompresije."));
+            reject(new Error("image-too-large-after-compression"));
             return;
           }
 
@@ -424,7 +434,7 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
 
       image.onerror = () => {
         URL.revokeObjectURL(objectUrl);
-        reject(new Error("Učitavanje slike nije uspjelo."));
+        reject(new Error("image-load-failed"));
       };
 
       image.src = objectUrl;
@@ -448,13 +458,13 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
     }
 
     if (!selectedFile.type.startsWith("image/")) {
-      setError("Možete odabrati samo sliku za profilnu.");
+      setError(t("profile.edit.errors.onlyImage"));
       return;
     }
 
     const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
     if (selectedFile.size > MAX_IMAGE_SIZE_BYTES) {
-      setError("Slika je prevelika. Maksimalna veličina je 5 MB.");
+      setError(t("profile.edit.errors.maxImageSize"));
       return;
     }
 
@@ -484,12 +494,12 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
     const normalizedPhotoURL = photoURL.trim();
 
     if (!normalizedDisplayName) {
-      setError("Unesite korisničko ime.");
+      setError(t("profile.auth.errors.enterUsername"));
       return;
     }
 
     if (!normalizedEmail) {
-      setError("Unesite email.");
+      setError(t("profile.edit.errors.enterEmail"));
       return;
     }
 
@@ -500,7 +510,7 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) {
-        setError("Korisnik nije prijavljen.");
+        setError(t("profile.edit.errors.userNotLoggedIn"));
         return;
       }
 
@@ -541,27 +551,23 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
       refreshUserProfile().catch((refreshError) => {
         console.error("Profile refresh failed:", refreshError);
       });
-      setSuccess("Profil je uspješno ažuriran.");
+      setSuccess(t("profile.edit.success"));
       setTimeout(() => onClose(), 650);
     } catch (err) {
       console.error("Profile save failed:", err);
 
       if (err?.code === "auth/requires-recent-login") {
-        setError(
-          "Za promjenu emaila se morate ponovno prijaviti (odjavite se pa prijavite).",
-        );
-      } else if (err?.message === "Učitavanje slike nije uspjelo.") {
-        setError("Učitavanje slike nije uspjelo. Pokušaj ponovno.");
-      } else if (err?.message === "Canvas context nije dostupan.") {
-        setError("Pregled slike nije podržan u ovom pregledniku.");
-      } else if (err?.message === "Kompresija slike nije uspjela.") {
-        setError("Kompresija slike nije uspjela. Odaberi drugu sliku.");
-      } else if (
-        err?.message === "Slika je i dalje prevelika nakon kompresije."
-      ) {
-        setError("Slika je prevelika. Odaberi manju sliku ili screenshot.");
+        setError(t("profile.edit.errors.requiresRecentLogin"));
+      } else if (err?.message === "image-load-failed") {
+        setError(t("profile.edit.errors.imageLoadFailed"));
+      } else if (err?.message === "canvas-context-unavailable") {
+        setError(t("profile.edit.errors.canvasUnavailable"));
+      } else if (err?.message === "image-compression-failed") {
+        setError(t("profile.edit.errors.compressionFailed"));
+      } else if (err?.message === "image-too-large-after-compression") {
+        setError(t("profile.edit.errors.imageTooLargeAfterCompression"));
       } else {
-        setError("Spremanje promjena nije uspjelo. Pokušaj ponovo.");
+        setError(t("profile.edit.errors.saveFailed"));
       }
     } finally {
       setLoading(false);
@@ -603,7 +609,7 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
           mb={2.5}
         >
           <Typography sx={{ fontSize: "22px", fontWeight: 800 }}>
-            Edit profile
+            {t("profile.edit.title")}
           </Typography>
           <IconButton onClick={onClose} size="small">
             <CloseIcon />
@@ -613,7 +619,7 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
         <Stack spacing={1.4}>
           <input
             style={inputStyle}
-            placeholder="Username"
+            placeholder={t("profile.auth.username")}
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
           />
@@ -647,14 +653,14 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
               className="profile-photo-action profile-photo-action-camera"
               onClick={() => cameraInputRef.current?.click()}
             >
-              Slikaj kamerom
+              {t("profile.edit.takePhoto")}
             </button>
             <button
               type="button"
               className="profile-photo-action profile-photo-action-gallery"
               onClick={() => galleryInputRef.current?.click()}
             >
-              Galerija / Upload
+              {t("profile.edit.galleryUpload")}
             </button>
           </Stack>
 
@@ -665,7 +671,7 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
                 sx={{ width: 44, height: 44 }}
               />
               <Typography sx={{ fontSize: "12px", color: "#666" }}>
-                Nova profilna je odabrana.
+                {t("profile.edit.newPhotoSelected")}
               </Typography>
             </Stack>
           )}
@@ -674,7 +680,7 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
             <Typography
               sx={{ fontSize: "12px", color: "#888", mb: 0.5, ml: 0.5 }}
             >
-              Datum rođenja
+              {t("profile.birthDate")}
             </Typography>
             <input
               style={inputStyle}
@@ -713,7 +719,7 @@ const EditProfileModal = ({ onClose, user, userProfile }) => {
               opacity: loading ? 0.7 : 1,
             }}
           >
-            {loading ? "Spremam..." : "Spremi promjene"}
+            {loading ? t("profile.edit.saving") : t("profile.edit.saveChanges")}
           </button>
         </Stack>
       </Box>
@@ -981,7 +987,7 @@ const Profile = () => {
           <Typography
             sx={{ fontSize: "24px", fontWeight: 800, textAlign: "center" }}
           >
-            Moj profil
+            {t("profile.title")}
           </Typography>
 
           <Typography
@@ -992,8 +998,7 @@ const Profile = () => {
               lineHeight: 1.5,
             }}
           >
-            Prijavi se kako bi pratio svoje omiljene vježbe i personalizirao
-            aplikaciju.
+            {t("profile.loginPrompt")}
           </Typography>
 
           <button
@@ -1011,7 +1016,7 @@ const Profile = () => {
               boxShadow: "0 4px 16px rgba(94,187,76,0.35)",
             }}
           >
-            Prijavi se
+            {t("profile.auth.login")}
           </button>
         </Box>
 
@@ -1022,7 +1027,10 @@ const Profile = () => {
 
   // Prijavljen - podaci
   const displayName =
-    userProfile?.displayName || user.displayName || user.email || "Korisnik";
+    userProfile?.displayName ||
+    user.displayName ||
+    user.email ||
+    t("profile.userFallback");
   const email = userProfile?.email || user.email;
   const birthDate = userProfile?.birthDate;
   // Čitaj sliku iz Firestorea (gdje je data URL slika pohranjena), ne iz Auth-a
@@ -1031,9 +1039,11 @@ const Profile = () => {
   const formattedBirthDate = birthDate
     ? (() => {
         const parsed = new Date(birthDate);
+        const language =
+          (typeof navigator !== "undefined" && navigator.language) || "en-US";
         return Number.isNaN(parsed.getTime())
           ? null
-          : parsed.toLocaleDateString("hr-HR");
+          : parsed.toLocaleDateString(language);
       })()
     : null;
 
@@ -1062,7 +1072,7 @@ const Profile = () => {
               border: "1.5px solid #e0e0e0",
               "&:hover": { backgroundColor: "#fee", borderColor: "#e53935" },
             }}
-            title="Odjavi se"
+            title={t("profile.logout")}
           >
             <LogoutIcon sx={{ fontSize: "18px", color: "#e53935" }} />
           </IconButton>
@@ -1122,7 +1132,7 @@ const Profile = () => {
                 {favoriteCount}
               </Typography>
               <Typography sx={{ fontSize: "12px", color: "#888" }}>
-                Omiljenih vježbi
+                {t("profile.favoriteExercises")}
               </Typography>
             </Box>
           </Stack>
@@ -1130,14 +1140,14 @@ const Profile = () => {
 
         {/* Omiljene vježbe */}
         <Typography sx={{ fontSize: "20px", fontWeight: 800, mb: 2 }}>
-          Omiljene vježbe ({favoriteCount})
+          {t("profile.favorites")} ({favoriteCount})
         </Typography>
 
         {favoriteCount === 0 ? (
           <Box sx={{ textAlign: "center", py: 6, color: "#bbb" }}>
             <Typography sx={{ fontSize: "40px", mb: 1 }}>🤍</Typography>
             <Typography sx={{ fontSize: "15px" }}>
-              Nemate omiljene vježbe još.
+              {t("profile.noFavorites")}
             </Typography>
           </Box>
         ) : loadingFavorites ? (
@@ -1147,10 +1157,10 @@ const Profile = () => {
         ) : favoriteExercises.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 6, color: "#888" }}>
             <Typography sx={{ fontSize: "15px" }}>
-              Trenutno ne mogu dohvatiti detalje omiljenih vježbi (API limit).
+              {t("profile.favoritesApiUnavailable")}
             </Typography>
             <Typography sx={{ fontSize: "13px", mt: 1, color: "#aaa" }}>
-              Probajte ponovno za minutu.
+              {t("profile.tryAgainSoon")}
             </Typography>
           </Box>
         ) : (
@@ -1162,8 +1172,9 @@ const Profile = () => {
                   fontSize: "13px",
                 }}
               >
-                Neke omiljene vježbe ({unresolvedFavoritesCount}) trenutno nisu
-                učitane zbog API ograničenja.
+                {t("profile.unresolvedFavorites", {
+                  count: unresolvedFavoritesCount,
+                })}
               </Typography>
             )}
             {pagedFavoriteExercises.map((exercise) => (
