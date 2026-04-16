@@ -26,6 +26,19 @@
     "tryAgainSoon": "Probajte ponovno za minutu.",
     "unresolvedFavorites": "Neke omiljene vježbe ({{count}}) trenutno nisu učitane zbog API ograničenja.",
     "birthDate": "Datum rođenja",
+    "delete": {
+      "action": "Obriši račun",
+      "deleting": "Brišem račun...",
+      "confirm": "Ovo će trajno obrisati tvoj račun i spremljene podatke profila iz baze podataka. Želiš li nastaviti?",
+      "passwordPrompt": "Unesi trenutnu lozinku kako bi potvrdio brisanje računa.",
+      "errors": {
+        "userNotLoggedIn": "Korisnik nije prijavljen.",
+        "reauthFailed": "Ponovna prijava nije uspjela. Pokušaj ponovno.",
+        "wrongPassword": "Lozinka nije točna.",
+        "requiresRecentLogin": "Odjavi se i ponovno prijavi, pa onda pokušaj obrisati račun.",
+        "deleteFailed": "Brisanje računa nije uspjelo. Pokušaj ponovno."
+      }
+    },
     "auth": {
       "loginTitle": "Prijava",
       "registerTitle": "Registracija",

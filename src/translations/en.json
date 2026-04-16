@@ -26,6 +26,19 @@
     "tryAgainSoon": "Please try again in a minute.",
     "unresolvedFavorites": "Some favorite exercises ({{count}}) are currently unavailable due to API limits.",
     "birthDate": "Birth date",
+    "delete": {
+      "action": "Delete account",
+      "deleting": "Deleting account...",
+      "confirm": "This will permanently delete your account and saved profile data from data base. Continue?",
+      "passwordPrompt": "Enter your current password to confirm account deletion.",
+      "errors": {
+        "userNotLoggedIn": "User is not logged in.",
+        "reauthFailed": "Reauthentication failed. Please try again.",
+        "wrongPassword": "The password is incorrect.",
+        "requiresRecentLogin": "Please log out and log back in, then try deleting the account again.",
+        "deleteFailed": "Account deletion failed. Please try again."
+      }
+    },
     "auth": {
       "loginTitle": "Login",
       "registerTitle": "Register",

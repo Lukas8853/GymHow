@@ -16,8 +16,12 @@ import {
   signOut,
   updateProfile,
   updateEmail,
+  deleteUser,
+  reauthenticateWithPopup,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
 } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, deleteDoc } from "firebase/firestore";
 import { auth, db, googleProvider } from "../firebase";
 import { AppContext } from "../AppContext";
 import { useTranslation } from "react-i18next";
@@ -736,6 +740,8 @@ const Profile = () => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [favoriteExercises, setFavoriteExercises] = useState([]);
   const [loadingFavorites, setLoadingFavorites] = useState(false);
   const [unresolvedFavoritesCount, setUnresolvedFavoritesCount] = useState(0);
@@ -946,6 +952,75 @@ const Profile = () => {
     await signOut(auth);
   };
 
+  const handleDeleteAccount = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      setDeleteError(t("profile.delete.errors.userNotLoggedIn"));
+      return;
+    }
+
+    const confirmed = window.confirm(t("profile.delete.confirm"));
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingAccount(true);
+    setDeleteError("");
+
+    try {
+      const providerIds = new Set(
+        (currentUser.providerData || [])
+          .map((provider) => provider.providerId)
+          .filter(Boolean),
+      );
+
+      if (providerIds.has("google.com")) {
+        await reauthenticateWithPopup(currentUser, googleProvider);
+      } else if (providerIds.has("password")) {
+        const password = window.prompt(t("profile.delete.passwordPrompt"));
+        if (!password) {
+          return;
+        }
+
+        const email = currentUser.email;
+        if (!email) {
+          setDeleteError(t("profile.delete.errors.reauthFailed"));
+          return;
+        }
+
+        const credential = EmailAuthProvider.credential(email, password);
+        await reauthenticateWithCredential(currentUser, credential);
+      }
+
+      localStorage.removeItem("favorites");
+
+      const userRef = doc(db, "users", currentUser.uid);
+      await deleteDoc(userRef);
+      await deleteUser(currentUser);
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("Account deletion failed:", error);
+
+      if (error?.code === "auth/popup-closed-by-user") {
+        return;
+      }
+
+      if (error?.code === "auth/wrong-password") {
+        setDeleteError(t("profile.delete.errors.wrongPassword"));
+        return;
+      }
+
+      if (error?.code === "auth/requires-recent-login") {
+        setDeleteError(t("profile.delete.errors.requiresRecentLogin"));
+        return;
+      }
+
+      setDeleteError(t("profile.delete.errors.deleteFailed"));
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
   // Loading dok Firebase inicijalizira
   if (authLoading) {
     return (
@@ -1136,6 +1211,42 @@ const Profile = () => {
               </Typography>
             </Box>
           </Stack>
+
+          <Box sx={{ mt: 2 }}>
+            <button
+              type="button"
+              onClick={handleDeleteAccount}
+              disabled={deletingAccount}
+              style={{
+                width: "100%",
+                padding: "12px 16px",
+                borderRadius: "12px",
+                border: "1.5px solid #e53935",
+                backgroundColor: deletingAccount ? "#fff7f7" : "#fff",
+                color: "#e53935",
+                fontSize: "14px",
+                fontWeight: 700,
+                cursor: deletingAccount ? "not-allowed" : "pointer",
+                fontFamily: "Josefin Sans, sans-serif",
+              }}
+            >
+              {deletingAccount
+                ? t("profile.delete.deleting")
+                : t("profile.delete.action")}
+            </button>
+            {deleteError && (
+              <Typography
+                sx={{
+                  mt: 1,
+                  color: "#e53935",
+                  fontSize: "12.5px",
+                  textAlign: "center",
+                }}
+              >
+                {deleteError}
+              </Typography>
+            )}
+          </Box>
         </Box>
 
         {/* Omiljene vježbe */}
