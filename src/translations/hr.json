@@ -48,6 +48,7 @@
       "password": "Lozinka",
       "forgotPassword": "Zaboravljena lozinka?",
       "resetEmailSent": "Email za reset lozinke je poslan. Provjeri inbox.",
+      "verificationSentOnRegister": "Poslan je verifikacijski email. Potvrdi email prije prijave.",
       "login": "Prijavi se",
       "register": "Registriraj se",
       "createAccount": "Stvori račun",
@@ -56,6 +57,7 @@
       "errors": {
         "googleLoginFailed": "Google prijava nije uspjela. Pokušaj ponovo.",
         "invalidEmailOrPassword": "Pogrešan email ili lozinka.",
+        "emailNotVerified": "Email adresa još nije potvrđena.",
         "invalidEmail": "Unesi ispravnu email adresu.",
         "userNotFound": "Ne postoji korisnik s tim emailom.",
         "enterEmailForReset": "Prvo unesi email za reset lozinke.",

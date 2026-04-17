@@ -48,6 +48,7 @@
       "password": "Password",
       "forgotPassword": "Forgot password?",
       "resetEmailSent": "Password reset email sent. Check your inbox.",
+      "verificationSentOnRegister": "Verification email sent. Please verify your email before logging in.",
       "login": "Login",
       "register": "Register",
       "createAccount": "Create account",
@@ -56,6 +57,7 @@
       "errors": {
         "googleLoginFailed": "Google login failed. Please try again.",
         "invalidEmailOrPassword": "Wrong email or password.",
+        "emailNotVerified": "Your email is not verified yet.",
         "invalidEmail": "Please enter a valid email address.",
         "userNotFound": "No user found for this email.",
         "enterEmailForReset": "Enter your email first to reset password.",

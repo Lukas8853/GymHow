@@ -95,7 +95,22 @@ const AuthModal = ({ onClose }) => {
     setError("");
     setInfo("");
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      if (!result.user.emailVerified) {
+        try {
+          await sendEmailVerification(result.user);
+        } catch (verificationErr) {
+          console.log(
+            "Resend verification error:",
+            verificationErr.code,
+            verificationErr.message,
+          );
+        }
+        await signOut(auth);
+        setError(t("profile.auth.errors.emailNotVerified"));
+        setInfo(t("profile.auth.verificationSentOnRegister"));
+        return;
+      }
       await refreshUserProfile();
       onClose();
     } catch (err) {
@@ -128,8 +143,10 @@ const AuthModal = ({ onClose }) => {
         await sendEmailVerification(result.user);
       }
       await saveUserToFirestore(result.user, { displayName, birthDate });
-      await refreshUserProfile();
-      onClose();
+      await signOut(auth);
+      setMode("login");
+      setPassword("");
+      setInfo(t("profile.auth.verificationSentOnRegister"));
     } catch (err) {
       console.log("Register error:", err.code, err.message);
       if (err.code === "auth/email-already-in-use") {
