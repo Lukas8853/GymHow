@@ -46,6 +46,8 @@
       "or": "or",
       "username": "Username",
       "password": "Password",
+      "forgotPassword": "Forgot password?",
+      "resetEmailSent": "Password reset email sent. Check your inbox.",
       "login": "Login",
       "register": "Register",
       "createAccount": "Create account",
@@ -54,10 +56,14 @@
       "errors": {
         "googleLoginFailed": "Google login failed. Please try again.",
         "invalidEmailOrPassword": "Wrong email or password.",
+        "invalidEmail": "Please enter a valid email address.",
+        "userNotFound": "No user found for this email.",
+        "enterEmailForReset": "Enter your email first to reset password.",
         "enterUsername": "Enter a username.",
         "passwordMinLength": "Password must be at least 6 characters.",
         "emailAlreadyInUse": "Email is already in use.",
-        "registerFailed": "Registration failed. Please try again."
+        "registerFailed": "Registration failed. Please try again.",
+        "resetPasswordFailed": "Could not send password reset email. Please try again."
       }
     },
     "edit": {

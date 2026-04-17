@@ -12,6 +12,8 @@ import {
 import {
   signInWithPopup,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+  sendEmailVerification,
   createUserWithEmailAndPassword,
   signOut,
   updateProfile,
@@ -68,12 +70,14 @@ const AuthModal = ({ onClose }) => {
   const [birthDate, setBirthDate] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
   const { refreshUserProfile, isDarkMode } = useContext(AppContext);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError("");
+    setInfo("");
     try {
       const result = await signInWithPopup(auth, googleProvider);
       await saveUserToFirestore(result.user);
@@ -89,6 +93,7 @@ const AuthModal = ({ onClose }) => {
   const handleEmailLogin = async () => {
     setLoading(true);
     setError("");
+    setInfo("");
     try {
       await signInWithEmailAndPassword(auth, email, password);
       await refreshUserProfile();
@@ -111,6 +116,7 @@ const AuthModal = ({ onClose }) => {
     }
     setLoading(true);
     setError("");
+    setInfo("");
     try {
       const result = await createUserWithEmailAndPassword(
         auth,
@@ -118,6 +124,9 @@ const AuthModal = ({ onClose }) => {
         password,
       );
       await updateProfile(result.user, { displayName });
+      if (!result.user.emailVerified) {
+        await sendEmailVerification(result.user);
+      }
       await saveUserToFirestore(result.user, { displayName, birthDate });
       await refreshUserProfile();
       onClose();
@@ -127,6 +136,32 @@ const AuthModal = ({ onClose }) => {
         setError(t("profile.auth.errors.emailAlreadyInUse"));
       } else {
         setError(t("profile.auth.errors.registerFailed"));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setError(t("profile.auth.errors.enterEmailForReset"));
+      setInfo("");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setInfo("");
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      setInfo(t("profile.auth.resetEmailSent"));
+    } catch (err) {
+      if (err.code === "auth/user-not-found") {
+        setError(t("profile.auth.errors.userNotFound"));
+      } else if (err.code === "auth/invalid-email") {
+        setError(t("profile.auth.errors.invalidEmail"));
+      } else {
+        setError(t("profile.auth.errors.resetPasswordFailed"));
       }
     } finally {
       setLoading(false);
@@ -316,6 +351,30 @@ const AuthModal = ({ onClose }) => {
             </Typography>
           )}
 
+          {info && (
+            <Typography
+              sx={{ color: "#2e7d32", fontSize: "13px", textAlign: "center" }}
+            >
+              {info}
+            </Typography>
+          )}
+
+          {mode === "login" && (
+            <Typography
+              onClick={handleForgotPassword}
+              sx={{
+                textAlign: "right",
+                fontSize: "13px",
+                color: "#5ebb4c",
+                fontWeight: 700,
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.7 : 1,
+              }}
+            >
+              {t("profile.auth.forgotPassword")}
+            </Typography>
+          )}
+
           <button
             style={btnPrimary}
             onClick={mode === "login" ? handleEmailLogin : handleRegister}
@@ -342,6 +401,7 @@ const AuthModal = ({ onClose }) => {
             onClick={() => {
               setMode(mode === "login" ? "register" : "login");
               setError("");
+              setInfo("");
             }}
             style={{ color: "#5ebb4c", fontWeight: 700, cursor: "pointer" }}
           >

@@ -46,6 +46,8 @@
       "or": "ili",
       "username": "Korisničko ime",
       "password": "Lozinka",
+      "forgotPassword": "Zaboravljena lozinka?",
+      "resetEmailSent": "Email za reset lozinke je poslan. Provjeri inbox.",
       "login": "Prijavi se",
       "register": "Registriraj se",
       "createAccount": "Stvori račun",
@@ -54,10 +56,14 @@
       "errors": {
         "googleLoginFailed": "Google prijava nije uspjela. Pokušaj ponovo.",
         "invalidEmailOrPassword": "Pogrešan email ili lozinka.",
+        "invalidEmail": "Unesi ispravnu email adresu.",
+        "userNotFound": "Ne postoji korisnik s tim emailom.",
+        "enterEmailForReset": "Prvo unesi email za reset lozinke.",
         "enterUsername": "Unesite korisničko ime.",
         "passwordMinLength": "Lozinka mora imati najmanje 6 znakova.",
         "emailAlreadyInUse": "Email je već u upotrebi.",
-        "registerFailed": "Registracija nije uspjela. Pokušaj ponovo."
+        "registerFailed": "Registracija nije uspjela. Pokušaj ponovo.",
+        "resetPasswordFailed": "Slanje emaila za reset lozinke nije uspjelo. Pokušaj ponovno."
       }
     },
     "edit": {
