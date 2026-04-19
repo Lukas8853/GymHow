@@ -2,6 +2,13 @@ import { useRef, useState, useEffect, useContext } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Box, Stack, Typography, useMediaQuery } from "@mui/material"; //služi za organizaciju elemenata u stacku, može biti horizontalno ili vertikalno
 import { useTranslation } from "react-i18next"; //služi za prevođenje teksta na različite jezike
+import {
+  deleteUser,
+  reauthenticateWithPopup,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+} from "firebase/auth";
+import { doc, deleteDoc } from "firebase/firestore";
 import SettingsIcon from "@mui/icons-material/Settings";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
@@ -10,6 +17,7 @@ import FilterListOutlinedIcon from "@mui/icons-material/FilterListOutlined";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import SportsGymnasticsOutlinedIcon from "@mui/icons-material/SportsGymnasticsOutlined";
+import { auth, db, googleProvider } from "../firebase";
 
 import { AppContext } from "../AppContext";
 import {
@@ -29,6 +37,8 @@ const Navbar = () => {
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [bodyPartOptions, setBodyPartOptions] = useState(["all"]);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const {
     isDarkMode,
     setIsDarkMode,
@@ -111,8 +121,79 @@ const Navbar = () => {
         : "linear-gradient(180deg, #a81b27 0%, #ffffff 100%)";
 
   function toggleDropDownMenu() {
+    setDeleteError("");
     setIsDropDownMenuOpen((prevState) => !prevState);
   }
+
+  const handleDeleteAccount = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      setDeleteError(t("profile.delete.errors.userNotLoggedIn"));
+      return;
+    }
+
+    const confirmed = window.confirm(t("profile.delete.confirm"));
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingAccount(true);
+    setDeleteError("");
+
+    try {
+      const providerIds = new Set(
+        (currentUser.providerData || [])
+          .map((provider) => provider.providerId)
+          .filter(Boolean),
+      );
+
+      if (providerIds.has("google.com")) {
+        await reauthenticateWithPopup(currentUser, googleProvider);
+      } else if (providerIds.has("password")) {
+        const password = window.prompt(t("profile.delete.passwordPrompt"));
+        if (!password) {
+          return;
+        }
+
+        const email = currentUser.email;
+        if (!email) {
+          setDeleteError(t("profile.delete.errors.reauthFailed"));
+          return;
+        }
+
+        const credential = EmailAuthProvider.credential(email, password);
+        await reauthenticateWithCredential(currentUser, credential);
+      }
+
+      localStorage.removeItem("favorites");
+
+      const userRef = doc(db, "users", currentUser.uid);
+      await deleteDoc(userRef);
+      await deleteUser(currentUser);
+      setIsDropDownMenuOpen(false);
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("Account deletion failed:", error);
+
+      if (error?.code === "auth/popup-closed-by-user") {
+        return;
+      }
+
+      if (error?.code === "auth/wrong-password") {
+        setDeleteError(t("profile.delete.errors.wrongPassword"));
+        return;
+      }
+
+      if (error?.code === "auth/requires-recent-login") {
+        setDeleteError(t("profile.delete.errors.requiresRecentLogin"));
+        return;
+      }
+
+      setDeleteError(t("profile.delete.errors.deleteFailed"));
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
 
   function changeLanguage() {
     if (i18n.language === "hr") {
@@ -284,6 +365,8 @@ const Navbar = () => {
         position: "sticky",
         top: -1,
         pt: "1px",
+        width: "100vw",
+        marginLeft: "calc(50% - 50vw)",
         zIndex: 1300,
         background: navBackground,
       }}
@@ -750,6 +833,38 @@ const Navbar = () => {
               >
                 Edit profile
               </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deletingAccount}
+                style={{
+                  margin: "4px 12px",
+                  height: "40px",
+                  width: "calc(100% - 24px)",
+                  border: "1px solid #e53935",
+                  borderRadius: "8px",
+                  backgroundColor: deletingAccount ? "#fff7f7" : "#fff",
+                  color: "#e53935",
+                  cursor: deletingAccount ? "not-allowed" : "pointer",
+                  fontWeight: 700,
+                }}
+              >
+                {deletingAccount
+                  ? t("profile.delete.deleting")
+                  : t("profile.delete.action")}
+              </button>
+              {deleteError && (
+                <Typography
+                  sx={{
+                    color: "#e53935",
+                    fontSize: "12px",
+                    textAlign: "center",
+                    px: "12px",
+                    pt: "2px",
+                  }}
+                >
+                  {deleteError}
+                </Typography>
+              )}
             </Stack>
           )}
         </Box>

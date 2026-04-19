@@ -1324,6 +1324,7 @@ const Profile = () => {
               </Typography>
             )}
           </Box>
+
         </Box>
 
         {/* Omiljene vježbe */}
