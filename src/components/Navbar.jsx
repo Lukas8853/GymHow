@@ -797,7 +797,7 @@ const Navbar = () => {
                 ) : (
                   <LightModeOutlinedIcon />
                 )}
-                {isDarkMode ? "Dark" : "Light"}
+                {isDarkMode ? t("navbar.theme.dark") : t("navbar.theme.light")}
               </button>
               <button
                 onClick={changeLanguage}
@@ -831,7 +831,7 @@ const Navbar = () => {
                   fontWeight: 700,
                 }}
               >
-                Edit profile
+                {t("profile.edit.title")}
               </button>
               <button
                 onClick={handleDeleteAccount}

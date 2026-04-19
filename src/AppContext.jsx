@@ -83,43 +83,52 @@ export function AppContextProvider({ children }) {
   // Slušaj Firebase Auth promjene
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      if (firebaseUser) {
-        // Dohvati Firestore profil
-        const docRef = doc(db, "users", firebaseUser.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const profileData = docSnap.data();
-          setUserProfile(profileData);
+      try {
+        setUser(firebaseUser);
+        if (firebaseUser) {
+          // Dohvati Firestore profil, ali ne blokiraj Auth ako je pristup odbijen.
+          const docRef = doc(db, "users", firebaseUser.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const profileData = docSnap.data();
+            setUserProfile(profileData);
 
-          if (Array.isArray(profileData.favorite)) {
-            setFavorites(profileData.favorite.map((id) => String(id)));
+            if (Array.isArray(profileData.favorite)) {
+              setFavorites(profileData.favorite.map((id) => String(id)));
+            } else {
+              const localFavorites = JSON.parse(
+                localStorage.getItem("favorites") || "[]",
+              );
+              setFavorites(
+                Array.isArray(localFavorites)
+                  ? localFavorites.map((id) => String(id))
+                  : [],
+              );
+            }
           } else {
-            const localFavorites = JSON.parse(
-              localStorage.getItem("favorites") || "[]",
-            );
-            setFavorites(
-              Array.isArray(localFavorites)
-                ? localFavorites.map((id) => String(id))
-                : [],
-            );
+            setUserProfile(null);
+            setFavorites([]);
           }
         } else {
           setUserProfile(null);
+          const localFavorites = JSON.parse(
+            localStorage.getItem("favorites") || "[]",
+          );
+          setFavorites(
+            Array.isArray(localFavorites)
+              ? localFavorites.map((id) => String(id))
+              : [],
+          );
+        }
+      } catch (error) {
+        console.error("Auth profile load failed:", error);
+        if (firebaseUser) {
+          setUserProfile(null);
           setFavorites([]);
         }
-      } else {
-        setUserProfile(null);
-        const localFavorites = JSON.parse(
-          localStorage.getItem("favorites") || "[]",
-        );
-        setFavorites(
-          Array.isArray(localFavorites)
-            ? localFavorites.map((id) => String(id))
-            : [],
-        );
+      } finally {
+        setAuthLoading(false);
       }
-      setAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -127,10 +136,14 @@ export function AppContextProvider({ children }) {
   // Osvježi profil iz Firestorea (poziva se nakon promjena)
   const refreshUserProfile = async () => {
     if (auth.currentUser) {
-      const docRef = doc(db, "users", auth.currentUser.uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setUserProfile(docSnap.data());
+      try {
+        const docRef = doc(db, "users", auth.currentUser.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setUserProfile(docSnap.data());
+        }
+      } catch (error) {
+        console.error("Profile refresh failed:", error);
       }
     }
   };

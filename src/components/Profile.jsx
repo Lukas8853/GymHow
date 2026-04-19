@@ -1098,6 +1098,13 @@ const Profile = () => {
     }
   };
 
+  const isPasswordProviderUser = Boolean(
+    user?.providerData?.some((provider) => provider?.providerId === "password"),
+  );
+  const isEmailVerificationPending = Boolean(
+    user && isPasswordProviderUser && !user.emailVerified,
+  );
+
   // Loading dok Firebase inicijalizira
   if (authLoading) {
     return (
@@ -1107,8 +1114,8 @@ const Profile = () => {
     );
   }
 
-  // Nije prijavljen
-  if (!user) {
+  // Nije prijavljen (ili email/password korisnik bez verifikacije)
+  if (!user || isEmailVerificationPending) {
     return (
       <>
         <Box
@@ -1144,14 +1151,30 @@ const Profile = () => {
 
           <Typography
             sx={{
-              color: "#888",
+              color: isEmailVerificationPending ? "#e53935" : "#888",
               textAlign: "center",
               maxWidth: "280px",
               lineHeight: 1.5,
             }}
           >
-            {t("profile.loginPrompt")}
+            {isEmailVerificationPending
+              ? t("profile.auth.errors.emailNotVerified")
+              : t("profile.loginPrompt")}
           </Typography>
+
+          {isEmailVerificationPending && (
+            <Typography
+              sx={{
+                color: "#2e7d32",
+                textAlign: "center",
+                maxWidth: "320px",
+                fontSize: "13px",
+                lineHeight: 1.5,
+              }}
+            >
+              {t("profile.auth.verificationSentOnRegister")}
+            </Typography>
+          )}
 
           <button
             onClick={() => setShowModal(true)}

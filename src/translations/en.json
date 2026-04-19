@@ -5,6 +5,10 @@
     "profile": "Profile",
     "settings": "Settings",
     "login": "Login",
+    "theme": {
+      "light": "Light",
+      "dark": "Dark"
+    },
     "filter": {
       "sortExercises": "Sort exercises",
       "sort": "Sort",

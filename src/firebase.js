@@ -14,11 +14,12 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// On localhost/dev, enable App Check debug mode so requests can be verified
-// without failing due to domain/site-key mismatches.
+// In development, prefer App Check debug mode so localhost does not depend on
+// reCAPTCHA/browser privacy behavior.
+const debugToken = import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN;
 if (import.meta.env.DEV) {
   globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN =
-    import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN || true;
+    debugToken || "5DD58803-3368-4CF0-B078-D710480335E6";
 }
 
 // Initialize App Check with reCAPTCHA v3 for production traffic.

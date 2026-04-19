@@ -5,6 +5,10 @@
     "profile": "Profil",
     "settings": "Postavke",
     "login": "Prijava",
+    "theme": {
+      "light": "Svijetla",
+      "dark": "Tamna"
+    },
     "filter": {
       "sortExercises": "Sortiraj vježbe",
       "sort": "Sortiranje",
