@@ -16,7 +16,7 @@ import UpperLegs from "../assets/icons/bodyParts/upperLegs.png";
 import Waist from "../assets/icons/bodyParts/waist.png";
 import { useTranslation } from "react-i18next";
 
-const BodyPart = ({ item, setBodyPart, bodyPart, compact = false }) => {
+const BodyPart = ({ item, setBodyPart, bodyPart, compact = false, setDetailFilter }) => {
   const { t } = useTranslation();
   const { isDarkMode } = useContext(AppContext);
   return (
@@ -42,7 +42,12 @@ const BodyPart = ({ item, setBodyPart, bodyPart, compact = false }) => {
       }}
       onClick={() => {
         setBodyPart(item);
-        window.scrollTo({ top: 1800, left: 100, behavior: "smooth" });
+        if (setDetailFilter) {
+          setDetailFilter({ type: "bodyPart", value: item });
+        }
+        const el = document.getElementById("exercises");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        else window.scrollTo({ top: 0, behavior: "smooth" });
       }}
     >
       <Box

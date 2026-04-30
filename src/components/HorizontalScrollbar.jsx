@@ -82,7 +82,7 @@ const RightArrow = ({ isCompact, onArrowNavigate }) => {
   );
 };
  
-const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, isBodyParts }) => {
+const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, setDetailFilter, isBodyParts }) => {
   const { isDarkMode } = useContext(AppContext);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [dots, setDots] = useState([]);
@@ -373,6 +373,7 @@ const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, isBodyParts }) => {
                 item={activeItem}
                 bodyPart={bodyPart}
                 setBodyPart={setBodyPart}
+                setDetailFilter={setDetailFilter}
                 compact
               />
             ) : null}
@@ -501,6 +502,7 @@ const HorizontalScrollbar = ({ data, bodyPart, setBodyPart, isBodyParts }) => {
                 item={item}
                 bodyPart={bodyPart}
                 setBodyPart={setBodyPart}
+                setDetailFilter={setDetailFilter}
               />
             ) : (
               <ExerciseCard exercise={item} />

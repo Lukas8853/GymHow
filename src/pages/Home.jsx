@@ -72,12 +72,14 @@ const Home = () => {
         setExercises={setExercises}
         bodyPart={bodyPart}
         setBodyPart={setBodyPart}
+        setDetailFilter={setDetailFilter}
       />
       <Exercises
         exercises={exercises}
         setExercises={setExercises}
         bodyPart={bodyPart}
         detailFilter={detailFilter}
+        setDetailFilter={setDetailFilter}
       />
     </Box>
   );

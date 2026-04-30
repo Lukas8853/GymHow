@@ -464,11 +464,15 @@ export const filterExercisesByQuery = (exercises, query) => {
     return [];
   }
 
+  // Support multi-word searches: match if any token is present (OR logic).
+  const tokens = normalizedQuery.split(/\s+/).filter(Boolean);
+
   return exercises.filter((exercise) => {
     const name = normalizeText(exercise?.name);
 
-    if (normalizedQuery.length === 1) {
-      return name.startsWith(normalizedQuery);
+    // Single-character queries: prefer prefix match on name
+    if (tokens.length === 1 && tokens[0].length === 1) {
+      return name.startsWith(tokens[0]);
     }
 
     const searchable = [
@@ -481,7 +485,8 @@ export const filterExercisesByQuery = (exercises, query) => {
       .map((value) => normalizeText(value))
       .join(" ");
 
-    return searchable.includes(normalizedQuery);
+    // Return true if any token is included in the searchable string
+    return tokens.some((token) => searchable.includes(token));
   });
 };
 
