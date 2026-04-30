@@ -7,6 +7,7 @@ import BodyPartImage from "../assets/icons/body-part.png";
 import TargetImage from "../assets/icons/target.png";
 import EquipmentImage from "../assets/icons/equipment.png";
 import FavoriteIcon from "@mui/icons-material/Favorite";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import { useTranslation } from "react-i18next";
 import placeholder from "../assets/images/placeholder.png";
 import ExerciseImage from "./ExerciseImage";
@@ -91,6 +92,29 @@ const Detail = ({ exerciseDetail }) => {
       onClick: () => {
         if (isUserLoggedIn) {
           toggleFavorite(id);
+        }
+      },
+      disabled: !isUserLoggedIn,
+    },
+    {
+      icon: CalendarMonthOutlinedIcon,
+      iconSize: 42,
+      iconColor: !isUserLoggedIn ? "#cccccc" : "#1f6feb",
+      name: t("detail.addToPlan"),
+      onClick: () => {
+        if (!isUserLoggedIn) {
+          return;
+        }
+
+        window.dispatchEvent(
+          new CustomEvent("gymhow-add-to-plan", {
+            detail: { exercise: exerciseDetail },
+          }),
+        );
+
+        const plannerNode = document.getElementById("workout-planner");
+        if (plannerNode) {
+          plannerNode.scrollIntoView({ behavior: "smooth", block: "start" });
         }
       },
       disabled: !isUserLoggedIn,

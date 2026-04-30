@@ -1,7 +1,12 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Box, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Stack,
+  Typography,
+} from "@mui/material";
 import Pagination from "@mui/material/Pagination";
+import { useTranslation } from "react-i18next";
 
 import {
   BODYPARTS_CACHE_KEY,
@@ -28,6 +33,7 @@ const PageExercises = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const didMountRef = useRef(false);
+  const { t } = useTranslation();
 
   const searchQuery = useMemo(() => {
     const params = new URLSearchParams(location.search);

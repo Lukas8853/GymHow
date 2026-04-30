@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Stack, Typography, Button } from "@mui/material";
 import { useTranslation, Trans } from "react-i18next"; // ovo je za koristenjke </br> jer u i18n nema te mogucnosti, koristimo break u naslovui herobannera tamo onaj tekst
-import HeroBannerImage from "../assets/images/banner.png";
+import HeroBannerImage from "../assets/images/banner-janakisWC.jpg";
 
 const HeroBanner = () => {
   const { t } = useTranslation();

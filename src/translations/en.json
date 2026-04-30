@@ -3,6 +3,7 @@
     "home": "Home",
     "exercises": "Exercises",
     "profile": "Profile",
+    "planner": "Planner",
     "settings": "Settings",
     "login": "Login",
     "theme": {
@@ -94,6 +95,49 @@
       }
     }
   },
+  "planner": {
+    "title": "Workout planner",
+    "subtitle": "Plan your week and track sets and reps for each exercise.",
+    "loginPrompt": "Log in to save your weekly workout plan.",
+    "savedToCloud": "Saved to cloud",
+    "localOnly": "Local only",
+    "loading": "Loading planner...",
+    "loadingExercises": "Loading exercises...",
+    "noExercises": "No exercises available",
+    "addTitle": "Add exercise to a day",
+    "form": {
+      "helper": "Pick a day, choose an exercise, then set your reps and sets.",
+      "day": "Day",
+      "exercise": "Exercise",
+      "sets": "Sets",
+      "reps": "Reps"
+    },
+    "add": "Add to day",
+    "quickAdd": "Add to plan",
+    "save": "Save plan",
+    "saving": "Saving...",
+    "saved": "Saved",
+    "saveError": "Save failed",
+    "remove": "Remove exercise",
+    "emptyDay": "No exercises planned yet.",
+    "unknownExercise": "Unknown exercise",
+    "exercisesCount": "exercises",
+    "summary": {
+      "weekly": "Weekly plan",
+      "mobileFriendly": "Mobile-friendly",
+      "setsReps": "Sets & reps"
+    },
+    "days": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    },
+    "entryCaption": "{{sets}} x {{reps}}"
+  },
   "heroBanner": {
     "fitnessClub": "Fitness Club",
     "title": "Sweat, smile <br /> and Repeat",
@@ -116,6 +160,7 @@
     "detail": {
        "addToFavorite": "Add to Favorites",
        "removeFromFavorite": "Remove from Favorites",
+      "addToPlan": "Add to plan",
        "description": "Exercises keep you strong. {{name}} is one of the best exercises to target your {{target}}. It will help you improve your mood and gain energy.",
        "instructionsPrefix": "How to do {{name}}: {{instructions}}",
        "dynamicDescriptions": {

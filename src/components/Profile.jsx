@@ -35,6 +35,7 @@ import {
   writeCachedJson,
 } from "../utils/fetchData";
 import ExerciseImage from "./ExerciseImage";
+import WorkoutPlanner from "../pages/WorkoutPlanner";
 import placeholder from "../assets/images/placeholder.png";
 import { useLocation, useNavigate } from "react-router-dom";
 import GoogleIcon from "@mui/icons-material/Google";
@@ -1472,6 +1473,10 @@ const Profile = () => {
             )}
           </Stack>
         )}
+
+        <Box sx={{ mt: 4, width: "100%" }}>
+          <WorkoutPlanner />
+        </Box>
       </Box>
 
       {showEditModal && user && (

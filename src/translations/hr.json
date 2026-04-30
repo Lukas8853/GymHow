@@ -3,6 +3,7 @@
     "home": "Početna",
     "exercises": "Vježbe",
     "profile": "Profil",
+    "planner": "Planer",
     "settings": "Postavke",
     "login": "Prijava",
     "theme": {
@@ -94,6 +95,49 @@
       }
     }
   },
+  "planner": {
+    "title": "Planer treninga",
+    "subtitle": "Isplaniraj tjedan i prati serije i ponavljanja po vježbi.",
+    "loginPrompt": "Prijavi se kako bi spremio svoj tjedni plan treninga.",
+    "savedToCloud": "Spremljeno u oblak",
+    "localOnly": "Samo lokalno",
+    "loading": "Učitavam planer...",
+    "loadingExercises": "Učitavam vježbe...",
+    "noExercises": "Nema dostupnih vježbi",
+    "addTitle": "Dodaj vježbu u dan",
+    "form": {
+      "helper": "Odaberi dan, vježbu, pa postavi ponavljanja i serije.",
+      "day": "Dan",
+      "exercise": "Vježba",
+      "sets": "Serije",
+      "reps": "Ponavljanja"
+    },
+    "add": "Dodaj u dan",
+    "quickAdd": "Dodaj u plan",
+    "save": "Spremi plan",
+    "saving": "Spremam...",
+    "saved": "Spremljeno",
+    "saveError": "Spremanje nije uspjelo",
+    "remove": "Ukloni vježbu",
+    "emptyDay": "Još nema planiranih vježbi.",
+    "unknownExercise": "Nepoznata vježba",
+    "exercisesCount": "vježbi",
+    "summary": {
+      "weekly": "Tjedni plan",
+      "mobileFriendly": "Prilagođeno mobitelu",
+      "setsReps": "Serije i ponavljanja"
+    },
+    "days": {
+      "monday": "Ponedjeljak",
+      "tuesday": "Utorak",
+      "wednesday": "Srijeda",
+      "thursday": "Četvrtak",
+      "friday": "Petak",
+      "saturday": "Subota",
+      "sunday": "Nedjelja"
+    },
+    "entryCaption": "{{sets}} x {{reps}}"
+  },
   "heroBanner": {
   "fitnessClub": "Fitness Klub",
   "title": "Znoji se, nasmiješi <br /> i ponovi",
@@ -116,6 +160,7 @@
     "detail": {
     "addToFavorite": "Dodaj u omiljeno",
     "removeFromFavorite": "Ukloni iz omiljenih",
+    "addToPlan": "Dodaj u plan",
     "description": "Vježbe te čine jačim. {{name}} je jedna od najboljih vježbi za {{target}}. Pomoći će ti poboljšati raspoloženje i dobiti energiju.",
     "instructionsPrefix": "Kako izvesti vježbu {{name}}: {{instructions}}",
     "dynamicDescriptions": {

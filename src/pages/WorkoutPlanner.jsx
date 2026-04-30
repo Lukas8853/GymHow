@@ -1,0 +1,790 @@
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Divider,
+  IconButton,
+  MenuItem,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { useTranslation } from "react-i18next";
+
+import { AppContext } from "../AppContext";
+import { db } from "../firebase";
+import {
+  EXERCISES_CACHE_KEY,
+  fetchAllExercises,
+  readCachedJson,
+  writeCachedJson,
+} from "../utils/fetchData";
+
+const DAY_KEYS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+];
+
+const createEmptyWeek = () =>
+  DAY_KEYS.reduce((acc, key) => {
+    acc[key] = [];
+    return acc;
+  }, {});
+
+const normalizeExerciseId = (exercise) => {
+  const candidate =
+    exercise?.id ??
+    exercise?.exerciseId ??
+    exercise?.exercise_id ??
+    exercise?._id ??
+    exercise?.uuid;
+
+  if (candidate === undefined || candidate === null) {
+    return "";
+  }
+
+  return String(candidate).trim();
+};
+
+const WorkoutPlanner = () => {
+  const { t } = useTranslation();
+  const { user, authLoading, isDarkMode } = useContext(AppContext);
+  const topRef = useRef(null);
+
+  const [exercises, setExercises] = useState([]);
+  const [exercisesLoading, setExercisesLoading] = useState(true);
+  const [weekPlan, setWeekPlan] = useState(() => createEmptyWeek());
+  const [planLoading, setPlanLoading] = useState(false);
+  const [createdAt, setCreatedAt] = useState("");
+  const [saveState, setSaveState] = useState("idle");
+
+  const [selectedDay, setSelectedDay] = useState("monday");
+  const [selectedExerciseId, setSelectedExerciseId] = useState("");
+  const [setsValue, setSetsValue] = useState("3");
+  const [repsValue, setRepsValue] = useState("10");
+
+  const dayOptions = useMemo(
+    () =>
+      DAY_KEYS.map((key) => ({
+        key,
+        label: t(`planner.days.${key}`),
+      })),
+    [t],
+  );
+
+  useEffect(() => {
+    const loadExercises = async () => {
+      setExercisesLoading(true);
+
+      try {
+        const cachedExercises = readCachedJson(EXERCISES_CACHE_KEY, []);
+        if (Array.isArray(cachedExercises) && cachedExercises.length > 0) {
+          setExercises(cachedExercises);
+          return;
+        }
+
+        const fetched = await fetchAllExercises();
+        if (Array.isArray(fetched)) {
+          writeCachedJson(EXERCISES_CACHE_KEY, fetched);
+          setExercises(fetched);
+        } else {
+          setExercises([]);
+        }
+      } catch (error) {
+        console.error("Failed to load exercises for planner:", error);
+        setExercises([]);
+      } finally {
+        setExercisesLoading(false);
+      }
+    };
+
+    loadExercises();
+  }, []);
+
+  useEffect(() => {
+    const loadPlan = async () => {
+      if (!user) {
+        setWeekPlan(createEmptyWeek());
+        setCreatedAt("");
+        return;
+      }
+
+      setPlanLoading(true);
+
+      try {
+        const planRef = doc(db, "workoutPlans", user.uid);
+        const planSnap = await getDoc(planRef);
+
+        if (planSnap.exists()) {
+          const data = planSnap.data();
+          setWeekPlan({ ...createEmptyWeek(), ...data.week });
+          setCreatedAt(String(data.createdAt || ""));
+        } else {
+          setWeekPlan(createEmptyWeek());
+          setCreatedAt("");
+        }
+      } catch (error) {
+        console.error("Failed to load workout plan:", error);
+        setWeekPlan(createEmptyWeek());
+      } finally {
+        setPlanLoading(false);
+      }
+    };
+
+    loadPlan();
+  }, [user]);
+
+  useEffect(() => {
+    const handleQuickAdd = (event) => {
+      const detail = event?.detail || {};
+      const fallbackExercise = exercises.find(
+        (exercise) => normalizeExerciseId(exercise) === detail.exerciseId,
+      );
+      const selectedExercise = detail.exercise || fallbackExercise;
+      const selectedId = normalizeExerciseId(selectedExercise);
+
+      if (!selectedId) {
+        return;
+      }
+
+      const nextEntry = {
+        id: `${selectedId}-${Date.now()}`,
+        exerciseId: selectedId,
+        name: selectedExercise?.name || t("planner.unknownExercise"),
+        sets: Math.max(1, Number(detail.sets) || 3),
+        reps: Math.max(1, Number(detail.reps) || 10),
+      };
+
+      setWeekPlan((prev) => ({
+        ...prev,
+        [selectedDay]: [...(prev[selectedDay] || []), nextEntry],
+      }));
+
+      setSaveState("idle");
+    };
+
+    window.addEventListener("gymhow-add-to-plan", handleQuickAdd);
+    return () => window.removeEventListener("gymhow-add-to-plan", handleQuickAdd);
+  }, [exercises, selectedDay, t]);
+
+  const addExerciseToDay = () => {
+    if (!selectedExerciseId) {
+      return;
+    }
+
+    const selectedExercise = exercises.find(
+      (exercise) => normalizeExerciseId(exercise) === selectedExerciseId,
+    );
+
+    const nextEntry = {
+      id: `${selectedExerciseId}-${Date.now()}`,
+      exerciseId: selectedExerciseId,
+      name: selectedExercise?.name || t("planner.unknownExercise"),
+      sets: Math.max(1, Number(setsValue) || 1),
+      reps: Math.max(1, Number(repsValue) || 1),
+    };
+
+    setWeekPlan((prev) => ({
+      ...prev,
+      [selectedDay]: [...(prev[selectedDay] || []), nextEntry],
+    }));
+
+    setSaveState("idle");
+  };
+
+  const updateEntry = (dayKey, entryId, field, value) => {
+    setWeekPlan((prev) => ({
+      ...prev,
+      [dayKey]: (prev[dayKey] || []).map((entry) => {
+        if (entry.id !== entryId) {
+          return entry;
+        }
+
+        return {
+          ...entry,
+          [field]: Math.max(1, Number(value) || 1),
+        };
+      }),
+    }));
+
+    setSaveState("idle");
+  };
+
+  const removeEntry = (dayKey, entryId) => {
+    setWeekPlan((prev) => ({
+      ...prev,
+      [dayKey]: (prev[dayKey] || []).filter((entry) => entry.id !== entryId),
+    }));
+
+    setSaveState("idle");
+  };
+
+  const handleSave = async () => {
+    if (!user) {
+      return;
+    }
+
+    setSaveState("saving");
+
+    try {
+      const planRef = doc(db, "workoutPlans", user.uid);
+      const payload = {
+        userId: user.uid,
+        week: weekPlan,
+        createdAt: createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await setDoc(planRef, payload, { merge: true });
+      if (!createdAt) {
+        setCreatedAt(payload.createdAt);
+      }
+      setSaveState("saved");
+    } catch (error) {
+      console.error("Failed to save workout plan:", error);
+      setSaveState("error");
+    }
+  };
+
+  const saveLabel =
+    saveState === "saving"
+      ? t("planner.saving")
+      : saveState === "saved"
+        ? t("planner.saved")
+        : saveState === "error"
+          ? t("planner.saveError")
+          : t("planner.save");
+
+  const isBusy = authLoading || planLoading;
+  const pageBackground = isDarkMode
+    ? "radial-gradient(circle at top, rgba(31, 111, 235, 0.18), transparent 36%), linear-gradient(180deg, #0b0f14 0%, #11161d 100%)"
+    : "radial-gradient(circle at top, rgba(31, 111, 235, 0.08), transparent 36%), linear-gradient(180deg, #fbfbfd 0%, #f4f6fb 100%)";
+  const surfaceColor = isDarkMode ? "#101820" : "rgba(255, 255, 255, 0.88)";
+  const surfaceBorder = isDarkMode
+    ? "1px solid rgba(255, 255, 255, 0.12)"
+    : "1px solid rgba(0, 0, 0, 0.08)";
+  const accent = isDarkMode ? "#4ea1ff" : "#1f6feb";
+  const accentSoft = isDarkMode ? "rgba(78, 161, 255, 0.14)" : "rgba(31, 111, 235, 0.08)";
+  const inputStyles = {
+    "& .MuiInputBase-root": {
+      backgroundColor: isDarkMode ? "#121b25" : "rgba(255, 255, 255, 0.92)",
+      color: isDarkMode ? "#f4f7fb" : "#121212",
+      borderRadius: "12px",
+    },
+    "& .MuiInputLabel-root": {
+      color: isDarkMode ? "#aeb8c5" : "#667085",
+    },
+    "& .MuiOutlinedInput-notchedOutline": {
+      borderColor: isDarkMode
+        ? "rgba(255, 255, 255, 0.18)"
+        : "rgba(0, 0, 0, 0.12)",
+    },
+    "& .MuiSvgIcon-root": {
+      color: isDarkMode ? "#b7c0cc" : "#5f6368",
+    },
+  };
+
+  return (
+    <Box
+      ref={topRef}
+      id="workout-planner"
+      sx={{
+        width: "100%",
+        px: { xs: 2, sm: 3 },
+        py: { xs: 3, sm: 4 },
+        background: pageBackground,
+        borderRadius: { xs: 0, sm: 4 },
+      }}
+    >
+      <Stack spacing={3.5} sx={{ width: "100%" }}>
+        <Box
+          sx={{
+            width: "100%",
+            position: "relative",
+            overflow: "hidden",
+            p: { xs: 2.25, sm: 3 },
+            borderRadius: 4,
+            border: surfaceBorder,
+            background: isDarkMode
+              ? "linear-gradient(135deg, rgba(18, 24, 32, 0.95), rgba(12, 16, 22, 0.92))"
+              : "linear-gradient(135deg, rgba(255,255,255,0.96), rgba(244, 247, 252, 0.9))",
+            boxShadow: isDarkMode
+              ? "0 18px 50px rgba(0, 0, 0, 0.34)"
+              : "0 18px 45px rgba(15, 23, 42, 0.08)",
+            "&:before": {
+              content: '""',
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(120deg, rgba(31, 111, 235, 0.16), transparent 34%, transparent 66%, rgba(31, 111, 235, 0.08))",
+              pointerEvents: "none",
+            },
+          }}
+        >
+          <Stack spacing={1.5} sx={{ position: "relative", zIndex: 1 }}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              gap={2}
+              flexWrap="wrap"
+            >
+              <Box>
+                <Typography
+                  variant="h4"
+                  fontWeight={900}
+                  sx={{ letterSpacing: "-0.03em" }}
+                >
+                  {t("planner.title")}
+                </Typography>
+                <Typography
+                  sx={{
+                    mt: 0.5,
+                    color: isDarkMode ? "#b8c3d0" : "#566070",
+                    maxWidth: 680,
+                  }}
+                >
+                  {t("planner.subtitle")}
+                </Typography>
+              </Box>
+            </Stack>
+          </Stack>
+        </Box>
+
+        {!user && !isBusy && (
+          <Card
+            sx={{
+              backgroundColor: surfaceColor,
+              border: surfaceBorder,
+              boxShadow: isDarkMode
+                ? "0 16px 36px rgba(0, 0, 0, 0.22)"
+                : "0 12px 24px rgba(15, 23, 42, 0.06)",
+              borderRadius: 4,
+            }}
+          >
+            <CardContent>
+              <Typography
+                sx={{
+                  background: isDarkMode
+                    ? "linear-gradient(135deg, rgba(31, 41, 55, 0.95), rgba(18, 24, 32, 0.95))"
+                    : "linear-gradient(135deg, rgba(255,255,255,0.96), rgba(245,247,250,0.96))",
+                  color: isDarkMode ? "#f4f7fb" : "#0f172a",
+                  padding: "14px 16px",
+                  borderRadius: "12px",
+                  textAlign: "center",
+                  fontWeight: 700,
+                  border: isDarkMode
+                    ? "1px solid rgba(78, 161, 255, 0.18)"
+                    : "1px solid rgba(31, 111, 235, 0.10)",
+                }}
+              >
+                {t("planner.loginPrompt")}
+              </Typography>
+            </CardContent>
+          </Card>
+        )}
+
+        {isBusy && (
+          <Stack direction="row" spacing={1} alignItems="center">
+            <CircularProgress size={20} />
+            <Typography>{t("planner.loading")}</Typography>
+          </Stack>
+        )}
+
+        <Card
+          sx={{
+            width: "100%",
+            backgroundColor: surfaceColor,
+            border: surfaceBorder,
+            boxShadow: isDarkMode
+              ? "0 16px 36px rgba(0, 0, 0, 0.22)"
+              : "0 12px 24px rgba(15, 23, 42, 0.06)",
+            borderRadius: 4,
+            overflow: "hidden",
+            position: "relative",
+            "&:before": {
+              content: '""',
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 4,
+              background: `linear-gradient(90deg, ${accent}, ${isDarkMode ? "#7cc4ff" : "#54a1ff"})`,
+            },
+          }}
+        >
+          <CardContent>
+            <Stack spacing={2.25} sx={{ pt: 0.5 }}>
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                gap={2}
+                flexWrap="wrap"
+              >
+                <Typography fontWeight={800} sx={{ letterSpacing: "-0.01em" }}>
+                  {t("planner.addTitle")}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ color: isDarkMode ? "#9ca8b6" : "#687385" }}
+                >
+                  {t("planner.form.helper")}
+                </Typography>
+              </Stack>
+
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    sm: "1fr 1.5fr",
+                    md: "1fr 1.5fr 0.55fr 0.55fr",
+                  },
+                  gap: 1.5,
+                }}
+              >
+                <TextField
+                  select
+                  label={t("planner.form.day")}
+                  value={selectedDay}
+                  onChange={(event) => setSelectedDay(event.target.value)}
+                  sx={{ ...inputStyles }}
+                >
+                  {dayOptions.map((day) => (
+                    <MenuItem key={day.key} value={day.key}>
+                      {day.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+
+                <TextField
+                  select
+                  label={t("planner.form.exercise")}
+                  value={selectedExerciseId}
+                  onChange={(event) => setSelectedExerciseId(event.target.value)}
+                  sx={{ ...inputStyles }}
+                  disabled={exercisesLoading}
+                >
+                  {exercisesLoading && (
+                    <MenuItem value="">
+                      {t("planner.loadingExercises")}
+                    </MenuItem>
+                  )}
+                  {!exercisesLoading && exercises.length === 0 && (
+                    <MenuItem value="">
+                      {t("planner.noExercises")}
+                    </MenuItem>
+                  )}
+                  {!exercisesLoading &&
+                    exercises.map((exercise) => {
+                      const exerciseId = normalizeExerciseId(exercise);
+                      if (!exerciseId) {
+                        return null;
+                      }
+
+                      return (
+                        <MenuItem key={exerciseId} value={exerciseId}>
+                          {exercise.name}
+                        </MenuItem>
+                      );
+                    })}
+                </TextField>
+
+                <TextField
+                  type="number"
+                  label={t("planner.form.sets")}
+                  value={setsValue}
+                  onChange={(event) => setSetsValue(event.target.value)}
+                  inputProps={{ min: 1 }}
+                  sx={{ ...inputStyles }}
+                />
+                <TextField
+                  type="number"
+                  label={t("planner.form.reps")}
+                  value={repsValue}
+                  onChange={(event) => setRepsValue(event.target.value)}
+                  inputProps={{ min: 1 }}
+                  sx={{ ...inputStyles }}
+                />
+              </Box>
+
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1.5}
+                alignItems={{ xs: "stretch", sm: "center" }}
+                sx={{ pt: 0.25 }}
+              >
+                <Button
+                  variant="contained"
+                  onClick={addExerciseToDay}
+                  disabled={!selectedExerciseId || exercisesLoading}
+                  sx={{
+                    minHeight: 44,
+                    borderRadius: 999,
+                    px: 2.2,
+                    backgroundColor: accent,
+                    color: "#ffffff",
+                    boxShadow: isDarkMode
+                      ? "0 10px 22px rgba(31, 111, 235, 0.28)"
+                      : "0 10px 20px rgba(31, 111, 235, 0.20)",
+                    "&:hover": {
+                      backgroundColor: isDarkMode ? "#5aa6ff" : "#155ecf",
+                    },
+                    "&.Mui-disabled": {
+                      backgroundColor: isDarkMode ? "#253040" : "#e5eefc",
+                      color: isDarkMode ? "#cfd8e3" : "#8aa2c8",
+                      opacity: 1,
+                    },
+                  }}
+                >
+                  {t("planner.add")}
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={handleSave}
+                  disabled={!user || saveState === "saving"}
+                  startIcon={<SaveOutlinedIcon />}
+                  sx={{
+                    minHeight: 44,
+                    borderRadius: 999,
+                    px: 2.2,
+                    borderColor: isDarkMode
+                      ? "rgba(255, 255, 255, 0.22)"
+                      : "rgba(31, 111, 235, 0.24)",
+                    color: isDarkMode ? "#eef4fb" : accent,
+                    backgroundColor: isDarkMode ? "#121b25" : "rgba(255,255,255,0.92)",
+                    "&:hover": {
+                      backgroundColor: isDarkMode ? "#172230" : "rgba(31, 111, 235, 0.08)",
+                      borderColor: isDarkMode
+                        ? "rgba(255, 255, 255, 0.38)"
+                        : "rgba(31, 111, 235, 0.34)",
+                    },
+                    "&.Mui-disabled": {
+                      color: isDarkMode ? "#cfd8e3" : "#8aa2c8",
+                      borderColor: isDarkMode
+                        ? "rgba(255, 255, 255, 0.24)"
+                        : "rgba(31, 111, 235, 0.16)",
+                      backgroundColor: isDarkMode ? "#151e29" : "rgba(255,255,255,0.7)",
+                      opacity: 1,
+                    },
+                  }}
+                >
+                  {saveLabel}
+                </Button>
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
+
+        <Box
+          sx={{
+            width: "100%",
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" },
+            gap: 2,
+          }}
+        >
+          {dayOptions.map((day) => (
+            <Card
+              key={day.key}
+              sx={{
+                backgroundColor: surfaceColor,
+                border: surfaceBorder,
+                boxShadow: isDarkMode
+                  ? "0 14px 32px rgba(0, 0, 0, 0.18)"
+                  : "0 10px 22px rgba(15, 23, 42, 0.05)",
+                borderRadius: 4,
+                overflow: "hidden",
+                transition: "transform 0.18s ease, box-shadow 0.18s ease",
+                "&:hover": {
+                  transform: "translateY(-1px)",
+                  boxShadow: isDarkMode
+                    ? "0 18px 36px rgba(0, 0, 0, 0.26)"
+                    : "0 14px 28px rgba(15, 23, 42, 0.08)",
+                },
+              }}
+            >
+              <CardContent>
+                <Stack spacing={2}>
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    sx={{
+                      pb: 0.5,
+                    }}
+                  >
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Box
+                        sx={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: "50%",
+                          backgroundColor: accent,
+                          boxShadow: `0 0 0 6px ${accentSoft}`,
+                        }}
+                      />
+                      <Typography fontWeight={800} sx={{ letterSpacing: "-0.01em" }}>
+                        {day.label}
+                      </Typography>
+                    </Stack>
+                    <Chip
+                      label={`${
+                        (weekPlan[day.key] || []).length
+                      } ${t("planner.exercisesCount")}`}
+                      size="small"
+                      sx={{
+                        backgroundColor: accentSoft,
+                        color: isDarkMode ? "#d9e9ff" : accent,
+                        fontWeight: 700,
+                      }}
+                    />
+                  </Stack>
+
+                  <Divider
+                    sx={{
+                      borderColor: isDarkMode
+                        ? "rgba(255, 255, 255, 0.08)"
+                        : undefined,
+                    }}
+                  />
+
+                  {(weekPlan[day.key] || []).length === 0 ? (
+                    <Box
+                      sx={{
+                        p: 2,
+                        borderRadius: 3,
+                        border: isDarkMode
+                          ? "1px dashed rgba(255,255,255,0.12)"
+                          : "1px dashed rgba(31,111,235,0.18)",
+                        backgroundColor: isDarkMode
+                          ? "rgba(18, 24, 32, 0.75)"
+                          : "rgba(31, 111, 235, 0.03)",
+                      }}
+                    >
+                      <Typography color="text.secondary">
+                      {t("planner.emptyDay")}
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Stack spacing={1.5}>
+                      {(weekPlan[day.key] || []).map((entry) => (
+                        <Stack
+                          key={entry.id}
+                          direction={{ xs: "column", sm: "row" }}
+                          spacing={1}
+                          alignItems={{ xs: "stretch", sm: "center" }}
+                          sx={{
+                            borderRadius: "16px",
+                            border: isDarkMode
+                              ? "1px solid rgba(255, 255, 255, 0.08)"
+                              : "1px solid rgba(15, 23, 42, 0.06)",
+                            padding: "12px",
+                            backgroundColor: isDarkMode
+                              ? "linear-gradient(135deg, rgba(18, 26, 34, 0.88), rgba(15, 22, 30, 0.88))"
+                              : "linear-gradient(135deg, rgba(255,255,255,0.96), rgba(250,252,255,0.96))",
+                            boxShadow: isDarkMode
+                              ? "0 10px 24px rgba(0, 0, 0, 0.16)"
+                              : "0 8px 18px rgba(15, 23, 42, 0.04)",
+                          }}
+                        >
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography fontWeight={600}>
+                              {entry.name}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              sx={{ color: isDarkMode ? "#93a2b6" : "#667085" }}
+                            >
+                              {t("planner.entryCaption", {
+                                sets: entry.sets,
+                                reps: entry.reps,
+                                defaultValue: `${entry.sets} x ${entry.reps}`,
+                              })}
+                            </Typography>
+                          </Box>
+
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <TextField
+                              type="number"
+                              label={t("planner.form.sets")}
+                              value={entry.sets}
+                              onChange={(event) =>
+                                updateEntry(
+                                  day.key,
+                                  entry.id,
+                                  "sets",
+                                  event.target.value,
+                                )
+                              }
+                              inputProps={{ min: 1 }}
+                              sx={{ width: "110px", ...inputStyles }}
+                            />
+                            <TextField
+                              type="number"
+                              label={t("planner.form.reps")}
+                              value={entry.reps}
+                              onChange={(event) =>
+                                updateEntry(
+                                  day.key,
+                                  entry.id,
+                                  "reps",
+                                  event.target.value,
+                                )
+                              }
+                              inputProps={{ min: 1 }}
+                              sx={{ width: "110px", ...inputStyles }}
+                            />
+                            <IconButton
+                              aria-label={t("planner.remove")}
+                              onClick={() => removeEntry(day.key, entry.id)}
+                              sx={{
+                                color: isDarkMode ? "#e8edf3" : accent,
+                                backgroundColor: isDarkMode
+                                  ? "rgba(255, 255, 255, 0.04)"
+                                  : "rgba(31, 111, 235, 0.06)",
+                                border: isDarkMode
+                                  ? "1px solid rgba(255,255,255,0.08)"
+                                  : "1px solid rgba(31, 111, 235, 0.10)",
+                                width: 42,
+                                height: 42,
+                                borderRadius: "12px",
+                                "&:hover": {
+                                  backgroundColor: isDarkMode
+                                    ? "rgba(229, 62, 62, 0.14)"
+                                    : "rgba(229, 62, 62, 0.08)",
+                                  color: "#e53e3e",
+                                },
+                              }}
+                            >
+                              <DeleteOutlineIcon />
+                            </IconButton>
+                          </Stack>
+                        </Stack>
+                      ))}
+                    </Stack>
+                  )}
+                </Stack>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
+      </Stack>
+    </Box>
+  );
+};
+
+export default WorkoutPlanner;
