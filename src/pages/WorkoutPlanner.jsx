@@ -37,6 +37,8 @@ const DAY_KEYS = [
   "sunday",
 ];
 
+const PENDING_PLAN_ADD_KEY = "gymhow-pending-plan-add";
+
 const createEmptyWeek = () =>
   DAY_KEYS.reduce((acc, key) => {
     acc[key] = [];
@@ -69,11 +71,58 @@ const WorkoutPlanner = () => {
   const [planLoading, setPlanLoading] = useState(false);
   const [createdAt, setCreatedAt] = useState("");
   const [saveState, setSaveState] = useState("idle");
+  const pendingAppliedRef = useRef(false);
 
   const [selectedDay, setSelectedDay] = useState("monday");
   const [selectedExerciseId, setSelectedExerciseId] = useState("");
   const [setsValue, setSetsValue] = useState("3");
   const [repsValue, setRepsValue] = useState("10");
+
+  const readPendingAdd = () => {
+    try {
+      const stored = localStorage.getItem(PENDING_PLAN_ADD_KEY);
+      return stored ? JSON.parse(stored) : null;
+    } catch (error) {
+      console.warn("Failed to read pending plan add:", error);
+      return null;
+    }
+  };
+
+  const clearPendingAdd = () => {
+    try {
+      localStorage.removeItem(PENDING_PLAN_ADD_KEY);
+    } catch (error) {
+      console.warn("Failed to clear pending plan add:", error);
+    }
+  };
+
+  const appendEntryToDay = (dayKey, selectedExercise, sets, reps) => {
+    const selectedId = normalizeExerciseId(selectedExercise);
+
+    if (!selectedId) {
+      return false;
+    }
+
+    const nextEntry = {
+      id: `${selectedId}-${Date.now()}`,
+      exerciseId: selectedId,
+      name: selectedExercise?.name || t("planner.unknownExercise"),
+      sets: Math.max(1, Number(sets) || 1),
+      reps: Math.max(1, Number(reps) || 1),
+    };
+
+    setWeekPlan((prev) => ({
+      ...prev,
+      [dayKey]: [...(prev[dayKey] || []), nextEntry],
+    }));
+
+    if (dayKey !== selectedDay) {
+      setSelectedDay(dayKey);
+    }
+
+    setSaveState("idle");
+    return true;
+  };
 
   const dayOptions = useMemo(
     () =>
@@ -149,35 +198,64 @@ const WorkoutPlanner = () => {
   useEffect(() => {
     const handleQuickAdd = (event) => {
       const detail = event?.detail || {};
+      const targetDay =
+        typeof detail.dayKey === "string" && detail.dayKey
+          ? detail.dayKey
+          : selectedDay;
       const fallbackExercise = exercises.find(
         (exercise) => normalizeExerciseId(exercise) === detail.exerciseId,
       );
       const selectedExercise = detail.exercise || fallbackExercise;
-      const selectedId = normalizeExerciseId(selectedExercise);
+      const added = appendEntryToDay(
+        targetDay,
+        selectedExercise,
+        Math.max(1, Number(detail.sets) || 3),
+        Math.max(1, Number(detail.reps) || 10),
+      );
 
-      if (!selectedId) {
-        return;
+      if (added && detail.pendingId) {
+        const pending = readPendingAdd();
+        if (pending?.id === detail.pendingId) {
+          clearPendingAdd();
+        }
       }
-
-      const nextEntry = {
-        id: `${selectedId}-${Date.now()}`,
-        exerciseId: selectedId,
-        name: selectedExercise?.name || t("planner.unknownExercise"),
-        sets: Math.max(1, Number(detail.sets) || 3),
-        reps: Math.max(1, Number(detail.reps) || 10),
-      };
-
-      setWeekPlan((prev) => ({
-        ...prev,
-        [selectedDay]: [...(prev[selectedDay] || []), nextEntry],
-      }));
-
-      setSaveState("idle");
     };
 
     window.addEventListener("gymhow-add-to-plan", handleQuickAdd);
     return () => window.removeEventListener("gymhow-add-to-plan", handleQuickAdd);
   }, [exercises, selectedDay, t]);
+
+  useEffect(() => {
+    if (pendingAppliedRef.current) {
+      return;
+    }
+
+    if (exercisesLoading || planLoading) {
+      return;
+    }
+
+    const pending = readPendingAdd();
+    if (!pending) {
+      pendingAppliedRef.current = true;
+      return;
+    }
+
+    const fallbackExercise = exercises.find(
+      (exercise) => normalizeExerciseId(exercise) === pending.exerciseId,
+    );
+    const selectedExercise = pending.exercise || fallbackExercise;
+    const targetDay =
+      typeof pending.dayKey === "string" && pending.dayKey
+        ? pending.dayKey
+        : selectedDay;
+
+    const added = appendEntryToDay(targetDay, selectedExercise, 3, 10);
+    if (added) {
+      clearPendingAdd();
+    }
+
+    pendingAppliedRef.current = true;
+  }, [exercisesLoading, planLoading, exercises, selectedDay, t]);
 
   const addExerciseToDay = () => {
     if (!selectedExerciseId) {
@@ -187,21 +265,7 @@ const WorkoutPlanner = () => {
     const selectedExercise = exercises.find(
       (exercise) => normalizeExerciseId(exercise) === selectedExerciseId,
     );
-
-    const nextEntry = {
-      id: `${selectedExerciseId}-${Date.now()}`,
-      exerciseId: selectedExerciseId,
-      name: selectedExercise?.name || t("planner.unknownExercise"),
-      sets: Math.max(1, Number(setsValue) || 1),
-      reps: Math.max(1, Number(repsValue) || 1),
-    };
-
-    setWeekPlan((prev) => ({
-      ...prev,
-      [selectedDay]: [...(prev[selectedDay] || []), nextEntry],
-    }));
-
-    setSaveState("idle");
+    appendEntryToDay(selectedDay, selectedExercise, setsValue, repsValue);
   };
 
   const updateEntry = (dayKey, entryId, field, value) => {

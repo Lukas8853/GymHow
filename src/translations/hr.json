@@ -161,6 +161,11 @@
     "addToFavorite": "Dodaj u omiljeno",
     "removeFromFavorite": "Ukloni iz omiljenih",
     "addToPlan": "Dodaj u plan",
+    "chooseDayTitle": "Dodaj u plan",
+    "chooseDayHelp": "Odaberi dan za ovu vježbu.",
+    "confirmAdd": "Dodaj u dan",
+    "cancel": "Odustani",
+    "addedToPlanMessage": "Vježba je dodana u plan.",
     "description": "Vježbe te čine jačim. {{name}} je jedna od najboljih vježbi za {{target}}. Pomoći će ti poboljšati raspoloženje i dobiti energiju.",
     "instructionsPrefix": "Kako izvesti vježbu {{name}}: {{instructions}}",
     "dynamicDescriptions": {
