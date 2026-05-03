@@ -11,16 +11,6 @@ const ExerciseCard = ({ exercise }) => {
   const { t } = useTranslation();
   const bodyParts = getExerciseBodyParts(exercise).slice(0, 2);
 
-  const handleQuickAdd = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    window.dispatchEvent(
-      new CustomEvent("gymhow-add-to-plan", {
-        detail: { exercise },
-      }),
-    );
-  };
-
   return (
     <Link className="exercise-card" to={`/exercise/${exercise.id}`}>
       <ExerciseImage
@@ -69,26 +59,6 @@ const ExerciseCard = ({ exercise }) => {
       >
         {exercise.name}
       </Typography>
-      <Button
-        type="button"
-        onClick={handleQuickAdd}
-        sx={{
-          ml: "21px",
-          mb: "16px",
-          color: "#fff",
-          background: "#1f6feb",
-          fontSize: "13px",
-          borderRadius: "999px",
-          textTransform: "none",
-          padding: "6px 14px",
-          alignSelf: "flex-start",
-          "&:hover": {
-            background: "#1a5fcc",
-          },
-        }}
-      >
-        {t("planner.quickAdd")}
-      </Button>
     </Link>
   );
 };
