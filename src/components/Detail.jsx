@@ -319,7 +319,7 @@ const Detail = ({ exerciseDetail }) => {
         open={planToastOpen}
         autoHideDuration={2600}
         onClose={() => setPlanToastOpen(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert
           onClose={() => setPlanToastOpen(false)}
