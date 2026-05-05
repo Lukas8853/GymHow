@@ -296,6 +296,11 @@ const Detail = ({ exerciseDetail }) => {
               label={t("planner.form.day")}
               value={planDay}
               onChange={(event) => setPlanDay(event.target.value)}
+              sx={{
+                "& .MuiOutlinedInput-input": {
+                  color: "#fff",
+                },
+              }}
             >
               {dayOptions.map((day) => (
                 <MenuItem key={day.key} value={day.key}>

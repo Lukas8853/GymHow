@@ -8,6 +8,11 @@ import {
   IconButton,
   Stack,
   Pagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from "@mui/material";
 import {
   signInWithPopup,
@@ -820,6 +825,8 @@ const Profile = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [favoriteExercises, setFavoriteExercises] = useState([]);
   const [loadingFavorites, setLoadingFavorites] = useState(false);
   const [unresolvedFavoritesCount, setUnresolvedFavoritesCount] = useState(0);
@@ -1027,18 +1034,23 @@ const Profile = () => {
   }, [user, safeFavorites, safeExercises]);
 
   const handleLogout = async () => {
+    setLogoutDialogOpen(false);
     await signOut(auth);
   };
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccountClick = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setDeleteDialogOpen(false);
+    await handleDeleteAccountConfirmed();
+  };
+
+  const handleDeleteAccountConfirmed = async () => {
     const currentUser = auth.currentUser;
     if (!currentUser) {
       setDeleteError(t("profile.delete.errors.userNotLoggedIn"));
-      return;
-    }
-
-    const confirmed = window.confirm(t("profile.delete.confirm"));
-    if (!confirmed) {
       return;
     }
 
@@ -1239,7 +1251,7 @@ const Profile = () => {
         >
           {/* Logout gumb */}
           <IconButton
-            onClick={handleLogout}
+            onClick={() => setLogoutDialogOpen(true)}
             sx={{
               position: "absolute",
               top: "16px",
@@ -1312,42 +1324,6 @@ const Profile = () => {
               </Typography>
             </Box>
           </Stack>
-
-          <Box sx={{ mt: 2 }}>
-            <button
-              type="button"
-              onClick={handleDeleteAccount}
-              disabled={deletingAccount}
-              style={{
-                width: "100%",
-                padding: "12px 16px",
-                borderRadius: "12px",
-                border: "1.5px solid #e53935",
-                backgroundColor: deletingAccount ? "#fff7f7" : "#fff",
-                color: "#e53935",
-                fontSize: "14px",
-                fontWeight: 700,
-                cursor: deletingAccount ? "not-allowed" : "pointer",
-                fontFamily: "Josefin Sans, sans-serif",
-              }}
-            >
-              {deletingAccount
-                ? t("profile.delete.deleting")
-                : t("profile.delete.action")}
-            </button>
-            {deleteError && (
-              <Typography
-                sx={{
-                  mt: 1,
-                  color: "#e53935",
-                  fontSize: "12.5px",
-                  textAlign: "center",
-                }}
-              >
-                {deleteError}
-              </Typography>
-            )}
-          </Box>
 
         </Box>
 
@@ -1486,6 +1462,66 @@ const Profile = () => {
           userProfile={userProfile}
         />
       )}
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog
+        open={logoutDialogOpen}
+        onClose={() => setLogoutDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Sign out of {displayName}</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to sign out of {displayName}?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLogoutDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleLogout}
+            variant="contained"
+            color="error"
+          >
+            Sign out
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Account Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ color: "#e53935", fontWeight: 700 }}>
+          Delete account
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 2 }}>
+            Are you sure you want to delete your account? This action cannot be undone.
+          </Typography>
+          <Typography variant="caption" sx={{ color: "#e53935" }}>
+            All your data will be permanently deleted.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            variant="contained"
+            color="error"
+            disabled={deletingAccount}
+          >
+            {deletingAccount ? "Deleting..." : "Delete account"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
