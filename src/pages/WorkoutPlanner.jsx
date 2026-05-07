@@ -84,12 +84,73 @@ const WorkoutPlanner = () => {
   const [dragSourceDay, setDragSourceDay] = useState(null);
   const [dragSourceEntryId, setDragSourceEntryId] = useState(null);
   const [reorderMode, setReorderMode] = useState(false);
+  const touchStartRef = useRef(null);
 
   const handleDragStart = (e, dayKey, entryId) => {
     setDragSourceDay(dayKey);
     setDragSourceEntryId(entryId);
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", entryId);
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", entryId);
+    }
+  };
+
+  const handleTouchStart = (e, dayKey, entryId) => {
+    touchStartRef.current = { dayKey, entryId, timestamp: Date.now() };
+    setDragSourceDay(dayKey);
+    setDragSourceEntryId(entryId);
+    e.preventDefault();
+  };
+
+  const handleTouchMove = (e) => {
+    if (touchStartRef.current) {
+      e.preventDefault();
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!touchStartRef.current || !dragSourceDay || !dragSourceEntryId) {
+      touchStartRef.current = null;
+      return;
+    }
+
+    const touch = e.changedTouches?.[0];
+    if (!touch) {
+      touchStartRef.current = null;
+      return;
+    }
+
+    // Find the element at the touch end position
+    const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    // Find the Card parent element (look up the DOM tree)
+    let cardElement = elementAtPoint;
+    while (cardElement && cardElement.getAttribute?.("data-day-card") !== "true") {
+      cardElement = cardElement.parentElement;
+    }
+
+    if (cardElement) {
+      const targetDay = cardElement.getAttribute("data-day-key");
+      if (targetDay && dragSourceDay && dragSourceEntryId) {
+        if (dragSourceDay !== targetDay) {
+          const sourceEntries = weekPlan[dragSourceDay] || [];
+          const entryIndex = sourceEntries.findIndex((e) => e.id === dragSourceEntryId);
+
+          if (entryIndex !== -1) {
+            const movedEntry = sourceEntries[entryIndex];
+            setWeekPlan((prev) => ({
+              ...prev,
+              [dragSourceDay]: sourceEntries.filter((_, i) => i !== entryIndex),
+              [targetDay]: [...(prev[targetDay] || []), movedEntry],
+            }));
+          }
+        }
+      }
+    }
+
+    setDragSourceDay(null);
+    setDragSourceEntryId(null);
+    touchStartRef.current = null;
   };
 
   const handleDragOver = (e) => {
@@ -765,6 +826,8 @@ const WorkoutPlanner = () => {
           {dayOptions.map((day) => (
             <Card
               key={day.key}
+              data-day-card="true"
+              data-day-key={day.key}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDropOnDay(e, day.key)}
               sx={{
@@ -856,12 +919,19 @@ const WorkoutPlanner = () => {
                           onDragEnd={() => {
                             setDragSourceDay(null);
                             setDragSourceEntryId(null);
+                            touchStartRef.current = null;
                           }}
+                          onTouchStart={(e) => handleTouchStart(e, day.key, entry.id)}
+                          onTouchMove={handleTouchMove}
+                          onTouchEnd={handleTouchEnd}
                           direction={{ xs: "column", sm: "row" }}
                           spacing={1}
                           alignItems={{ xs: "flex-start", sm: "center" }}
                           sx={{
                             cursor: "grab",
+                            touchAction: "none",
+                            userSelect: "none",
+                            WebkitUserSelect: "none",
                             "&:active": {
                               cursor: "grabbing",
                             },
