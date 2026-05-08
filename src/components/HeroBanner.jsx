@@ -1,10 +1,14 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Box, Stack, Typography, Button } from "@mui/material";
 import { useTranslation, Trans } from "react-i18next"; // ovo je za koristenjke </br> jer u i18n nema te mogucnosti, koristimo break u naslovui herobannera tamo onaj tekst
+import { AppContext } from "../AppContext";
 import HeroBannerImage from "../assets/images/banner-janakisWC.jpg";
+import GeminiBannerImage from "../assets/images/Gemini_Generated_Image_pkyg19pkyg19pkyg.png";
 
 const HeroBanner = () => {
   const { t } = useTranslation();
+  const { isDarkMode } = useContext(AppContext);
+  const bannerImage = isDarkMode ? GeminiBannerImage : HeroBannerImage;
 
   return (
     <Box
@@ -42,7 +46,7 @@ const HeroBanner = () => {
       >
         {t("heroBanner.watermark")}
       </Typography>
-      <img src={HeroBannerImage} alt="banner" className="hero-banner-img" />
+      <img src={bannerImage} alt="banner" className="hero-banner-img" />
     </Box>
   );
 };
