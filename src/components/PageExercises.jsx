@@ -1,12 +1,10 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import {
-  Box,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Stack, Typography, TextField } from "@mui/material";
 import Pagination from "@mui/material/Pagination";
+import PaginationItem from "@mui/material/PaginationItem";
 import { useTranslation } from "react-i18next";
+import PageJumpDialog from "./PageJumpDialog";
 
 import {
   BODYPARTS_CACHE_KEY,
@@ -156,7 +154,10 @@ const PageExercises = () => {
     }
 
     if (exerciseSortOrder === "common") {
-      const normalize = (value) => String(value || "").trim().toLowerCase();
+      const normalize = (value) =>
+        String(value || "")
+          .trim()
+          .toLowerCase();
       const toLabel = (value) =>
         String(value || "")
           .trim()
@@ -165,7 +166,9 @@ const PageExercises = () => {
           .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
           .join(" ");
 
-      const selectedSet = new Set(selectedBodyParts.map((part) => normalize(part)));
+      const selectedSet = new Set(
+        selectedBodyParts.map((part) => normalize(part)),
+      );
 
       const targetToBodyParts = new Map();
       filteredExercises.forEach((exercise) => {
@@ -327,6 +330,78 @@ const PageExercises = () => {
   }, [groupedExercises]);
 
   const totalPages = groupedExercisePages.length;
+  const [jumpOpen, setJumpOpen] = useState(false);
+
+  const EllipsisJump = () => {
+    const [editing, setEditing] = useState(false);
+    const [val, setVal] = useState(String(currentPage));
+    const inputRef = useRef(null);
+
+    useEffect(() => setVal(String(currentPage)), [currentPage]);
+
+    useEffect(() => {
+      if (editing) {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }
+    }, [editing]);
+
+    const submit = () => {
+      const n = parseInt(val, 10);
+      if (Number.isNaN(n)) {
+        setEditing(false);
+        return;
+      }
+      const page = Math.max(1, Math.min(totalPages, n));
+      // call the same handler used for normal page changes
+      handlePageChange(null, page);
+      setEditing(false);
+    };
+
+    if (!editing) {
+      return (
+        <Box
+          component="button"
+          type="button"
+          onClick={() => setEditing(true)}
+          sx={{
+            minWidth: 22,
+            border: 0,
+            background: "transparent",
+            cursor: "pointer",
+            font: "inherit",
+            color: isDarkMode ? "#ffffff" : "#000000",
+            px: 0.25,
+          }}
+          className="MuiPaginationItem-ellipsis"
+        >
+          ...
+        </Box>
+      );
+    }
+
+    return (
+      <Box sx={{ px: 0.25 }}>
+        <TextField
+          inputRef={inputRef}
+          autoFocus
+          size="small"
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") submit();
+            if (e.key === "Escape") setEditing(false);
+          }}
+          onBlur={() => setEditing(false)}
+          inputProps={{
+            inputMode: "numeric",
+            pattern: "[0-9]*",
+            style: { width: 36, textAlign: "center" },
+          }}
+        />
+      </Box>
+    );
+  };
 
   useEffect(() => {
     if (!didMountRef.current) {
@@ -362,15 +437,19 @@ const PageExercises = () => {
   return (
     <Box mt="50px" p="20px" pb="120px">
       <Typography variant="h3" mb="30px">
-        Exercises
-        {exerciseSortOrder === "common"
-          ? " Common"
-          : exerciseSortOrder === "za"
-            ? " Z-A"
-            : " A-Z"}
+        {t("pageExercises.title", {
+          sort:
+            exerciseSortOrder === "common"
+              ? t("pageExercises.sort.common")
+              : exerciseSortOrder === "za"
+                ? t("pageExercises.sort.za")
+                : t("pageExercises.sort.az"),
+        })}
       </Typography>
       <Typography variant="body1" color="text.secondary" mb="20px">
-        Total exercises: {filteredExercises.length}
+        {t("pageExercises.totalExercises", {
+          count: filteredExercises.length,
+        })}
       </Typography>
 
       {isLoading ? (
@@ -432,17 +511,44 @@ const PageExercises = () => {
           ))}
 
           {totalPages > 1 && (
-            <Stack mt="24px" alignItems="center">
+            <Stack
+              mt="24px"
+              alignItems="center"
+              sx={{
+                width: "100%",
+                overflowX: { xs: "auto", sm: "visible" },
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
               <Pagination
                 color="standard"
                 shape="rounded"
                 count={totalPages}
                 page={currentPage}
                 onChange={handlePageChange}
+                renderItem={(item) => {
+                  if (
+                    item.type === "start-ellipsis" ||
+                    item.type === "end-ellipsis"
+                  ) {
+                    return <EllipsisJump itemType={item.type} />;
+                  }
+                  return <PaginationItem {...item} />;
+                }}
                 size="large"
                 sx={{
+                  overflowX: "auto",
+                  px: 1,
+                  "& .MuiPagination-ul": {
+                    display: "flex",
+                    flexWrap: "nowrap",
+                    whiteSpace: "nowrap",
+                  },
                   "& .MuiPaginationItem-root": {
                     color: isDarkMode ? "#ffffff" : "#000000",
+                    minWidth: { xs: 32, sm: "auto" },
+                    px: { xs: 0.6, sm: 1 },
                   },
                   "& .MuiPaginationItem-root.Mui-selected": {
                     color: isDarkMode ? "#ffffff" : "#000000",
@@ -450,6 +556,15 @@ const PageExercises = () => {
                       ? "rgba(255, 255, 255, 0.12)"
                       : "rgba(0, 0, 0, 0.08)",
                   },
+                }}
+              />
+              <PageJumpDialog
+                open={jumpOpen}
+                onClose={() => setJumpOpen(false)}
+                totalPages={totalPages}
+                initial={currentPage}
+                onSubmit={(page) => {
+                  handlePageChange(null, page);
                 }}
               />
             </Stack>

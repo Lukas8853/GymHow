@@ -12,7 +12,10 @@ const HeroBanner = () => {
 
   return (
     <Box
-      sx={{ mt: { lg: "212px", xs: "70px" } }}
+      sx={{
+        mt: { lg: "212px", xs: "70px" },
+        display: { xs: "none", sm: "block" },
+      }}
       position="relative"
       padding="20px"
     >

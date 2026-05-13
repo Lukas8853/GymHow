@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Button,
@@ -8,15 +9,18 @@ import {
   CircularProgress,
   Divider,
   IconButton,
+  Menu,
   MenuItem,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useTranslation } from "react-i18next";
@@ -66,8 +70,10 @@ const normalizeExerciseId = (exercise) => {
 
 const WorkoutPlanner = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { user, authLoading, isDarkMode } = useContext(AppContext);
   const topRef = useRef(null);
+  const isMobile = useMediaQuery("(max-width:899.95px)");
 
   const [exercises, setExercises] = useState([]);
   const [exercisesLoading, setExercisesLoading] = useState(true);
@@ -85,6 +91,9 @@ const WorkoutPlanner = () => {
   const [dragSourceEntryId, setDragSourceEntryId] = useState(null);
   const [reorderMode, setReorderMode] = useState(false);
   const touchStartRef = useRef(null);
+  const [moveMenuAnchor, setMoveMenuAnchor] = useState(null);
+  const [moveMenuEntryId, setMoveMenuEntryId] = useState(null);
+  const [moveMenuDay, setMoveMenuDay] = useState(null);
 
   const handleDragStart = (e, dayKey, entryId) => {
     setDragSourceDay(dayKey);
@@ -121,11 +130,17 @@ const WorkoutPlanner = () => {
     }
 
     // Find the element at the touch end position
-    const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
-    
+    const elementAtPoint = document.elementFromPoint(
+      touch.clientX,
+      touch.clientY,
+    );
+
     // Find the Card parent element (look up the DOM tree)
     let cardElement = elementAtPoint;
-    while (cardElement && cardElement.getAttribute?.("data-day-card") !== "true") {
+    while (
+      cardElement &&
+      cardElement.getAttribute?.("data-day-card") !== "true"
+    ) {
       cardElement = cardElement.parentElement;
     }
 
@@ -134,7 +149,9 @@ const WorkoutPlanner = () => {
       if (targetDay && dragSourceDay && dragSourceEntryId) {
         if (dragSourceDay !== targetDay) {
           const sourceEntries = weekPlan[dragSourceDay] || [];
-          const entryIndex = sourceEntries.findIndex((e) => e.id === dragSourceEntryId);
+          const entryIndex = sourceEntries.findIndex(
+            (e) => e.id === dragSourceEntryId,
+          );
 
           if (entryIndex !== -1) {
             const movedEntry = sourceEntries[entryIndex];
@@ -168,7 +185,9 @@ const WorkoutPlanner = () => {
       }
 
       const sourceEntries = weekPlan[dragSourceDay] || [];
-      const entryIndex = sourceEntries.findIndex((e) => e.id === dragSourceEntryId);
+      const entryIndex = sourceEntries.findIndex(
+        (e) => e.id === dragSourceEntryId,
+      );
 
       if (entryIndex !== -1) {
         const movedEntry = sourceEntries[entryIndex];
@@ -188,7 +207,10 @@ const WorkoutPlanner = () => {
       const entries = [...(prev[dayKey] || [])];
       const index = entries.findIndex((e) => e.id === entryId);
       if (index > 0) {
-        [entries[index], entries[index - 1]] = [entries[index - 1], entries[index]];
+        [entries[index], entries[index - 1]] = [
+          entries[index - 1],
+          entries[index],
+        ];
       }
       return {
         ...prev,
@@ -202,13 +224,33 @@ const WorkoutPlanner = () => {
       const entries = [...(prev[dayKey] || [])];
       const index = entries.findIndex((e) => e.id === entryId);
       if (index < entries.length - 1) {
-        [entries[index], entries[index + 1]] = [entries[index + 1], entries[index]];
+        [entries[index], entries[index + 1]] = [
+          entries[index + 1],
+          entries[index],
+        ];
       }
       return {
         ...prev,
         [dayKey]: entries,
       };
     });
+  };
+
+  const moveEntryToDay = (fromDay, entryId, toDay) => {
+    setWeekPlan((prev) => {
+      const fromEntries = prev[fromDay] || [];
+      const entryIndex = fromEntries.findIndex((e) => e.id === entryId);
+      if (entryIndex === -1) return prev;
+      const entry = fromEntries[entryIndex];
+      return {
+        ...prev,
+        [fromDay]: fromEntries.filter((_, i) => i !== entryIndex),
+        [toDay]: [...(prev[toDay] || []), entry],
+      };
+    });
+    setMoveMenuAnchor(null);
+    setMoveMenuEntryId(null);
+    setMoveMenuDay(null);
   };
 
   const readPendingAdd = () => {
@@ -355,7 +397,8 @@ const WorkoutPlanner = () => {
     };
 
     window.addEventListener("gymhow-add-to-plan", handleQuickAdd);
-    return () => window.removeEventListener("gymhow-add-to-plan", handleQuickAdd);
+    return () =>
+      window.removeEventListener("gymhow-add-to-plan", handleQuickAdd);
   }, [exercises, selectedDay, t]);
 
   useEffect(() => {
@@ -473,7 +516,9 @@ const WorkoutPlanner = () => {
     ? "1px solid rgba(255, 255, 255, 0.12)"
     : "1px solid rgba(0, 0, 0, 0.08)";
   const accent = isDarkMode ? "#4ea1ff" : "#1f6feb";
-  const accentSoft = isDarkMode ? "rgba(78, 161, 255, 0.14)" : "rgba(31, 111, 235, 0.08)";
+  const accentSoft = isDarkMode
+    ? "rgba(78, 161, 255, 0.14)"
+    : "rgba(31, 111, 235, 0.08)";
   const inputStyles = {
     "& .MuiInputBase-root": {
       backgroundColor: isDarkMode ? "#121b25" : "rgba(255, 255, 255, 0.92)",
@@ -671,7 +716,9 @@ const WorkoutPlanner = () => {
                   select
                   label={t("planner.form.exercise")}
                   value={selectedExerciseId}
-                  onChange={(event) => setSelectedExerciseId(event.target.value)}
+                  onChange={(event) =>
+                    setSelectedExerciseId(event.target.value)
+                  }
                   sx={{ ...inputStyles }}
                   disabled={exercisesLoading}
                 >
@@ -681,9 +728,7 @@ const WorkoutPlanner = () => {
                     </MenuItem>
                   )}
                   {!exercisesLoading && exercises.length === 0 && (
-                    <MenuItem value="">
-                      {t("planner.noExercises")}
-                    </MenuItem>
+                    <MenuItem value="">{t("planner.noExercises")}</MenuItem>
                   )}
                   {!exercisesLoading &&
                     exercises.map((exercise) => {
@@ -764,9 +809,13 @@ const WorkoutPlanner = () => {
                       ? "rgba(255, 255, 255, 0.22)"
                       : "rgba(31, 111, 235, 0.24)",
                     color: isDarkMode ? "#eef4fb" : accent,
-                    backgroundColor: isDarkMode ? "#121b25" : "rgba(255,255,255,0.92)",
+                    backgroundColor: isDarkMode
+                      ? "#121b25"
+                      : "rgba(255,255,255,0.92)",
                     "&:hover": {
-                      backgroundColor: isDarkMode ? "#172230" : "rgba(31, 111, 235, 0.08)",
+                      backgroundColor: isDarkMode
+                        ? "#172230"
+                        : "rgba(31, 111, 235, 0.08)",
                       borderColor: isDarkMode
                         ? "rgba(255, 255, 255, 0.38)"
                         : "rgba(31, 111, 235, 0.34)",
@@ -776,7 +825,9 @@ const WorkoutPlanner = () => {
                       borderColor: isDarkMode
                         ? "rgba(255, 255, 255, 0.24)"
                         : "rgba(31, 111, 235, 0.16)",
-                      backgroundColor: isDarkMode ? "#151e29" : "rgba(255,255,255,0.7)",
+                      backgroundColor: isDarkMode
+                        ? "#151e29"
+                        : "rgba(255,255,255,0.7)",
                       opacity: 1,
                     },
                   }}
@@ -794,14 +845,26 @@ const WorkoutPlanner = () => {
                     borderColor: isDarkMode
                       ? "rgba(255, 255, 255, 0.22)"
                       : "rgba(31, 111, 235, 0.24)",
-                    color: reorderMode ? "#fff" : isDarkMode ? "#eef4fb" : accent,
+                    color: reorderMode
+                      ? "#fff"
+                      : isDarkMode
+                        ? "#eef4fb"
+                        : accent,
                     backgroundColor: reorderMode
-                      ? isDarkMode ? "#1f6db1" : accent
-                      : isDarkMode ? "#121b25" : "rgba(255,255,255,0.92)",
+                      ? isDarkMode
+                        ? "#1f6db1"
+                        : accent
+                      : isDarkMode
+                        ? "#121b25"
+                        : "rgba(255,255,255,0.92)",
                     "&:hover": {
                       backgroundColor: reorderMode
-                        ? isDarkMode ? "#2878c8" : "#115ab0"
-                        : isDarkMode ? "#172230" : "rgba(31, 111, 235, 0.08)",
+                        ? isDarkMode
+                          ? "#2878c8"
+                          : "#115ab0"
+                        : isDarkMode
+                          ? "#172230"
+                          : "rgba(31, 111, 235, 0.08)",
                       borderColor: isDarkMode
                         ? "rgba(255, 255, 255, 0.38)"
                         : "rgba(31, 111, 235, 0.34)",
@@ -828,8 +891,8 @@ const WorkoutPlanner = () => {
               key={day.key}
               data-day-card="true"
               data-day-key={day.key}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDropOnDay(e, day.key)}
+              onDragOver={isMobile ? undefined : handleDragOver}
+              onDrop={isMobile ? undefined : (e) => handleDropOnDay(e, day.key)}
               sx={{
                 backgroundColor: surfaceColor,
                 border: surfaceBorder,
@@ -867,7 +930,10 @@ const WorkoutPlanner = () => {
                           boxShadow: `0 0 0 6px ${accentSoft}`,
                         }}
                       />
-                      <Typography fontWeight={800} sx={{ letterSpacing: "-0.01em" }}>
+                      <Typography
+                        fontWeight={800}
+                        sx={{ letterSpacing: "-0.01em" }}
+                      >
                         {day.label}
                       </Typography>
                     </Stack>
@@ -906,7 +972,7 @@ const WorkoutPlanner = () => {
                       }}
                     >
                       <Typography color="text.secondary">
-                      {t("planner.emptyDay")}
+                        {t("planner.emptyDay")}
                       </Typography>
                     </Box>
                   ) : (
@@ -914,27 +980,41 @@ const WorkoutPlanner = () => {
                       {(weekPlan[day.key] || []).map((entry) => (
                         <Stack
                           key={entry.id}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, day.key, entry.id)}
-                          onDragEnd={() => {
-                            setDragSourceDay(null);
-                            setDragSourceEntryId(null);
-                            touchStartRef.current = null;
-                          }}
-                          onTouchStart={(e) => handleTouchStart(e, day.key, entry.id)}
-                          onTouchMove={handleTouchMove}
-                          onTouchEnd={handleTouchEnd}
+                          draggable={!isMobile}
+                          onDragStart={
+                            isMobile
+                              ? undefined
+                              : (e) => handleDragStart(e, day.key, entry.id)
+                          }
+                          onDragEnd={
+                            isMobile
+                              ? undefined
+                              : () => {
+                                  setDragSourceDay(null);
+                                  setDragSourceEntryId(null);
+                                  touchStartRef.current = null;
+                                }
+                          }
+                          onTouchStart={
+                            isMobile
+                              ? undefined
+                              : (e) => handleTouchStart(e, day.key, entry.id)
+                          }
+                          onTouchMove={isMobile ? undefined : handleTouchMove}
+                          onTouchEnd={isMobile ? undefined : handleTouchEnd}
                           direction={{ xs: "column", sm: "row" }}
                           spacing={1}
                           alignItems={{ xs: "flex-start", sm: "center" }}
                           sx={{
-                            cursor: "grab",
-                            touchAction: "none",
+                            cursor: isMobile ? "default" : "grab",
+                            touchAction: isMobile ? "manipulation" : "none",
                             userSelect: "none",
                             WebkitUserSelect: "none",
-                            "&:active": {
-                              cursor: "grabbing",
-                            },
+                            "&:active": !isMobile
+                              ? {
+                                  cursor: "grabbing",
+                                }
+                              : undefined,
                             opacity: dragSourceEntryId === entry.id ? 0.5 : 1,
                             transition: "opacity 0.2s ease",
                             borderRadius: "16px",
@@ -966,7 +1046,9 @@ const WorkoutPlanner = () => {
                               </Typography>
                               <Typography
                                 variant="caption"
-                                sx={{ color: isDarkMode ? "#93a2b6" : "#667085" }}
+                                sx={{
+                                  color: isDarkMode ? "#93a2b6" : "#667085",
+                                }}
                               >
                                 {t("planner.entryCaption", {
                                   sets: entry.sets,
@@ -991,11 +1073,17 @@ const WorkoutPlanner = () => {
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
+                                cursor: "pointer",
                               }}
+                              onClick={() =>
+                                navigate(`/exercise/${entry.exerciseId}`)
+                              }
                             >
                               <ExerciseImage
                                 exercise={exercises.find(
-                                  (ex) => normalizeExerciseId(ex) === entry.exerciseId,
+                                  (ex) =>
+                                    normalizeExerciseId(ex) ===
+                                    entry.exerciseId,
                                 )}
                                 fallbackSrc="https://via.placeholder.com/60?text=Exercise"
                                 alt={entry.name}
@@ -1012,7 +1100,10 @@ const WorkoutPlanner = () => {
                             direction={{ xs: "column", sm: "row" }}
                             spacing={1}
                             alignItems={{ xs: "stretch", sm: "center" }}
-                            sx={{ order: { xs: 2, sm: 0 }, width: { xs: "100%", sm: "auto" } }}
+                            sx={{
+                              order: { xs: 2, sm: 0 },
+                              width: { xs: "100%", sm: "auto" },
+                            }}
                           >
                             <TextField
                               type="number"
@@ -1028,7 +1119,10 @@ const WorkoutPlanner = () => {
                               }
                               onFocus={(e) => e.target.select()}
                               inputProps={{ min: 1, step: 1 }}
-                              sx={{ width: { xs: "100%", sm: "110px" }, ...inputStyles }}
+                              sx={{
+                                width: { xs: "100%", sm: "110px" },
+                                ...inputStyles,
+                              }}
                             />
                             <TextField
                               type="number"
@@ -1044,84 +1138,156 @@ const WorkoutPlanner = () => {
                               }
                               onFocus={(e) => e.target.select()}
                               inputProps={{ min: 1, step: 1 }}
-                              sx={{ width: { xs: "100%", sm: "110px" }, ...inputStyles }}
-                            />
-                            {reorderMode && (
-                              <>
-                                <IconButton
-                                  aria-label="Move up"
-                                  onClick={() => moveExerciseUp(day.key, entry.id)}
-                                  sx={{
-                                    color: isDarkMode ? "#eef4fb" : accent,
-                                    backgroundColor: isDarkMode
-                                      ? "rgba(255, 255, 255, 0.04)"
-                                      : "rgba(31, 111, 235, 0.06)",
-                                    border: isDarkMode
-                                      ? "1px solid rgba(255,255,255,0.08)"
-                                      : "1px solid rgba(31, 111, 235, 0.10)",
-                                    width: 42,
-                                    height: 42,
-                                    borderRadius: "12px",
-                                    "&:hover": {
-                                      backgroundColor: isDarkMode
-                                        ? "rgba(31, 111, 235, 0.14)"
-                                        : "rgba(31, 111, 235, 0.08)",
-                                      color: accent,
-                                    },
-                                  }}
-                                >
-                                  <ArrowUpwardIcon />
-                                </IconButton>
-                                <IconButton
-                                  aria-label="Move down"
-                                  onClick={() => moveExerciseDown(day.key, entry.id)}
-                                  sx={{
-                                    color: isDarkMode ? "#eef4fb" : accent,
-                                    backgroundColor: isDarkMode
-                                      ? "rgba(255, 255, 255, 0.04)"
-                                      : "rgba(31, 111, 235, 0.06)",
-                                    border: isDarkMode
-                                      ? "1px solid rgba(255,255,255,0.08)"
-                                      : "1px solid rgba(31, 111, 235, 0.10)",
-                                    width: 42,
-                                    height: 42,
-                                    borderRadius: "12px",
-                                    "&:hover": {
-                                      backgroundColor: isDarkMode
-                                        ? "rgba(31, 111, 235, 0.14)"
-                                        : "rgba(31, 111, 235, 0.08)",
-                                      color: accent,
-                                    },
-                                  }}
-                                >
-                                  <ArrowDownwardIcon />
-                                </IconButton>
-                              </>
-                            )}
-                            <IconButton
-                              aria-label={t("planner.remove")}
-                              onClick={() => removeEntry(day.key, entry.id)}
                               sx={{
-                                color: isDarkMode ? "#e8edf3" : accent,
-                                backgroundColor: isDarkMode
-                                  ? "rgba(255, 255, 255, 0.04)"
-                                  : "rgba(31, 111, 235, 0.06)",
-                                border: isDarkMode
-                                  ? "1px solid rgba(255,255,255,0.08)"
-                                  : "1px solid rgba(31, 111, 235, 0.10)",
-                                width: 42,
-                                height: 42,
-                                borderRadius: "12px",
-                                "&:hover": {
+                                width: { xs: "100%", sm: "110px" },
+                                ...inputStyles,
+                              }}
+                            />
+                            <Stack
+                              direction="row"
+                              spacing={0.5}
+                              sx={{ display: "flex" }}
+                            >
+                              <IconButton
+                                aria-label={t("planner.remove")}
+                                onClick={() => removeEntry(day.key, entry.id)}
+                                sx={{
+                                  color: isDarkMode ? "#e8edf3" : accent,
                                   backgroundColor: isDarkMode
-                                    ? "rgba(229, 62, 62, 0.14)"
-                                    : "rgba(229, 62, 62, 0.08)",
-                                  color: "#e53e3e",
-                                },
+                                    ? "rgba(255, 255, 255, 0.04)"
+                                    : "rgba(31, 111, 235, 0.06)",
+                                  border: isDarkMode
+                                    ? "1px solid rgba(255,255,255,0.08)"
+                                    : "1px solid rgba(31, 111, 235, 0.10)",
+                                  width: 42,
+                                  height: 42,
+                                  borderRadius: "12px",
+                                  "&:hover": {
+                                    backgroundColor: isDarkMode
+                                      ? "rgba(229, 62, 62, 0.14)"
+                                      : "rgba(229, 62, 62, 0.08)",
+                                    color: "#e53e3e",
+                                  },
+                                }}
+                              >
+                                <DeleteOutlineIcon />
+                              </IconButton>
+                              <IconButton
+                                aria-label="Move up"
+                                onClick={() =>
+                                  moveExerciseUp(day.key, entry.id)
+                                }
+                                sx={{
+                                  display: reorderMode ? "flex" : "none",
+                                  color: isDarkMode ? "#eef4fb" : accent,
+                                  backgroundColor: isDarkMode
+                                    ? "rgba(255, 255, 255, 0.04)"
+                                    : "rgba(31, 111, 235, 0.06)",
+                                  border: isDarkMode
+                                    ? "1px solid rgba(255,255,255,0.08)"
+                                    : "1px solid rgba(31, 111, 235, 0.10)",
+                                  width: 42,
+                                  height: 42,
+                                  borderRadius: "12px",
+                                  "&:hover": {
+                                    backgroundColor: isDarkMode
+                                      ? "rgba(31, 111, 235, 0.14)"
+                                      : "rgba(31, 111, 235, 0.08)",
+                                    color: accent,
+                                  },
+                                }}
+                              >
+                                <ArrowUpwardIcon />
+                              </IconButton>
+                              <IconButton
+                                aria-label="Move down"
+                                onClick={() =>
+                                  moveExerciseDown(day.key, entry.id)
+                                }
+                                sx={{
+                                  display: reorderMode ? "flex" : "none",
+                                  color: isDarkMode ? "#eef4fb" : accent,
+                                  backgroundColor: isDarkMode
+                                    ? "rgba(255, 255, 255, 0.04)"
+                                    : "rgba(31, 111, 235, 0.06)",
+                                  border: isDarkMode
+                                    ? "1px solid rgba(255,255,255,0.08)"
+                                    : "1px solid rgba(31, 111, 235, 0.10)",
+                                  width: 42,
+                                  height: 42,
+                                  borderRadius: "12px",
+                                  "&:hover": {
+                                    backgroundColor: isDarkMode
+                                      ? "rgba(31, 111, 235, 0.14)"
+                                      : "rgba(31, 111, 235, 0.08)",
+                                    color: accent,
+                                  },
+                                }}
+                              >
+                                <ArrowDownwardIcon />
+                              </IconButton>
+                              <IconButton
+                                aria-label="Move to day"
+                                onClick={(e) => {
+                                  setMoveMenuAnchor(e.currentTarget);
+                                  setMoveMenuEntryId(entry.id);
+                                  setMoveMenuDay(day.key);
+                                }}
+                                sx={{
+                                  display: isMobile ? "flex" : "none",
+                                  color: isDarkMode ? "#eef4fb" : accent,
+                                  backgroundColor: isDarkMode
+                                    ? "rgba(255, 255, 255, 0.04)"
+                                    : "rgba(31, 111, 235, 0.06)",
+                                  border: isDarkMode
+                                    ? "1px solid rgba(255,255,255,0.08)"
+                                    : "1px solid rgba(31, 111, 235, 0.10)",
+                                  width: 42,
+                                  height: 42,
+                                  borderRadius: "12px",
+                                  "&:hover": {
+                                    backgroundColor: isDarkMode
+                                      ? "rgba(31, 111, 235, 0.14)"
+                                      : "rgba(31, 111, 235, 0.08)",
+                                    color: accent,
+                                  },
+                                }}
+                              >
+                                <ArrowForwardIcon />
+                              </IconButton>
+                            </Stack>
+                            <Menu
+                              anchorEl={
+                                moveMenuEntryId === entry.id
+                                  ? moveMenuAnchor
+                                  : null
+                              }
+                              open={
+                                moveMenuEntryId === entry.id &&
+                                Boolean(moveMenuAnchor)
+                              }
+                              onClose={() => {
+                                setMoveMenuAnchor(null);
+                                setMoveMenuEntryId(null);
+                                setMoveMenuDay(null);
                               }}
                             >
-                              <DeleteOutlineIcon />
-                            </IconButton>
+                              {dayOptions.map((dayOpt) => (
+                                <MenuItem
+                                  key={dayOpt.key}
+                                  onClick={() =>
+                                    moveEntryToDay(
+                                      day.key,
+                                      entry.id,
+                                      dayOpt.key,
+                                    )
+                                  }
+                                  disabled={dayOpt.key === day.key}
+                                >
+                                  {dayOpt.label}
+                                </MenuItem>
+                              ))}
+                            </Menu>
                           </Stack>
                         </Stack>
                       ))}

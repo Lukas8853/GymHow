@@ -715,26 +715,28 @@ const Navbar = () => {
                 </Box>
               )}
 
-              <button
-                onClick={() => {
-                  setIsSearchOpen((prev) => !prev);
-                  setIsSortMenuOpen(false);
-                }}
-                style={{
-                  width: "40px",
-                  height: "40px",
-                  border: "none",
-                  borderRadius: "10px",
-                  backgroundColor: "#020202",
-                  color: "#fff",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <SearchOutlinedIcon />
-              </button>
+              {!isHomePage && (
+                <button
+                  onClick={() => {
+                    setIsSearchOpen((prev) => !prev);
+                    setIsSortMenuOpen(false);
+                  }}
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    border: "none",
+                    borderRadius: "10px",
+                    backgroundColor: "#020202",
+                    color: "#fff",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <SearchOutlinedIcon />
+                </button>
+              )}
             </Stack>
           )}
 
@@ -891,7 +893,7 @@ const Navbar = () => {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value.toLowerCase())}
             onKeyPress={handleKeyPress}
-            placeholder="Search exercises..."
+            placeholder={t("searchExercises.placeholder")}
             style={{
               width: "100%",
               padding: "12px",

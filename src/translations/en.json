@@ -179,6 +179,15 @@
        "loading": "Loading...",
         "title": "Watch <highlight>{{name}}</highlight> exercise videos"
     },
+    "pageExercises": {
+      "title": "Exercises {{sort}}",
+      "totalExercises": "Total exercises: {{count}}",
+      "sort": {
+        "az": "A-Z",
+        "za": "Z-A",
+        "common": "by muscle group"
+      }
+    },
     "similarExercises":{
         "targetSameMuscleGroup": "Exercises that target the same muscle group",
         "exercisesSameEquipment": "Exercises that use the same equipment"

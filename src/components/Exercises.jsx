@@ -1,6 +1,7 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import Pagination from "@mui/material/Pagination";
-import { Box, Stack, Typography, Button } from "@mui/material/";
+import PaginationItem from "@mui/material/PaginationItem";
+import { Box, Stack, Typography, Button, TextField } from "@mui/material/";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
 import {
@@ -14,9 +15,16 @@ import {
 } from "../utils/fetchData";
 import { AppContext } from "../AppContext";
 import ExerciseCard from "./ExerciseCard";
+import PageJumpDialog from "./PageJumpDialog";
 import { useTranslation } from "react-i18next";
 
-const Exercises = ({ exercises, setExercises, bodyPart, detailFilter, setDetailFilter }) => {
+const Exercises = ({
+  exercises,
+  setExercises,
+  bodyPart,
+  detailFilter,
+  setDetailFilter,
+}) => {
   const [currentPage, setCurrentPage] = useState(1);
   const isFullscreen = useMediaQuery("(min-width:1200px)");
   const exercisesPerPage = isFullscreen ? 6 : 4;
@@ -34,6 +42,81 @@ const Exercises = ({ exercises, setExercises, bodyPart, detailFilter, setDetailF
     const el = document.getElementById("exercises");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     else window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const [jumpOpen, setJumpOpen] = useState(false);
+  const totalPages = Math.ceil(exercises.length / exercisesPerPage);
+
+  const EllipsisJump = () => {
+    const [editing, setEditing] = useState(false);
+    const [val, setVal] = useState(String(currentPage));
+    const inputRef = useRef(null);
+
+    useEffect(() => setVal(String(currentPage)), [currentPage]);
+
+    useEffect(() => {
+      if (editing) {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }
+    }, [editing]);
+
+    const submit = () => {
+      const n = parseInt(val, 10);
+      if (Number.isNaN(n)) {
+        setEditing(false);
+        return;
+      }
+      const page = Math.max(1, Math.min(totalPages, n));
+      setCurrentPage(page);
+      const el = document.getElementById("exercises");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      setEditing(false);
+    };
+
+    if (!editing) {
+      return (
+        <Box
+          component="button"
+          type="button"
+          onClick={() => setEditing(true)}
+          sx={{
+            minWidth: 22,
+            border: 0,
+            background: "transparent",
+            cursor: "pointer",
+            font: "inherit",
+            color: isDarkMode ? "#ffffff" : "#000000",
+            px: 0.25,
+          }}
+          className="MuiPaginationItem-ellipsis"
+        >
+          ...
+        </Box>
+      );
+    }
+
+    return (
+      <Box sx={{ px: 0.25 }}>
+        <TextField
+          inputRef={inputRef}
+          autoFocus
+          size="small"
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") submit();
+            if (e.key === "Escape") setEditing(false);
+          }}
+          onBlur={() => setEditing(false)}
+          inputProps={{
+            inputMode: "numeric",
+            pattern: "[0-9]*",
+            style: { width: 36, textAlign: "center" },
+          }}
+        />
+      </Box>
+    );
   };
 
   const handleReset = async () => {
@@ -97,18 +180,19 @@ const Exercises = ({ exercises, setExercises, bodyPart, detailFilter, setDetailF
               )
           : filterType === "search"
             ? filterExercisesByQuery(allExercises, filterValue)
-          : filterType === "target"
-            ? allExercises.filter(
-                (exercise) =>
-                  String(exercise?.target || "").toLowerCase() === filterValue,
-              )
-            : filterType === "equipment"
+            : filterType === "target"
               ? allExercises.filter(
                   (exercise) =>
-                    String(exercise?.equipment || "").toLowerCase() ===
+                    String(exercise?.target || "").toLowerCase() ===
                     filterValue,
                 )
-              : allExercises;
+              : filterType === "equipment"
+                ? allExercises.filter(
+                    (exercise) =>
+                      String(exercise?.equipment || "").toLowerCase() ===
+                      filterValue,
+                  )
+                : allExercises;
 
       setExercises(exercisesData);
     };
@@ -117,20 +201,31 @@ const Exercises = ({ exercises, setExercises, bodyPart, detailFilter, setDetailF
 
   // Određuje label koji se prikazuje u naslovu
   const getResultsLabel = () => {
-    if (detailFilter?.value) {
-      return detailFilter.value;
+    let value = detailFilter?.value || bodyPart || "all";
+    if (value === "all") {
+      return t("bodyParts.all");
     }
-    if (bodyPart && bodyPart !== "all") {
-      return bodyPart;
+    // Pokušaj prevesti kao dio tijela
+    const translated = t(`bodyParts.${value}`, null);
+    if (translated) {
+      return translated;
     }
-    return t("exercises.all");
+    // Ako prevod ne postoji, kapitaliziraj originalnu vrijednost
+    return value.charAt(0).toUpperCase() + value.slice(1);
   };
 
   return (
     <Box id="exercises" sx={{ mt: { lg: "110px" } }} mt="50px" p="20px">
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: "46px" }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          mb: "46px",
+        }}
+      >
         <Typography variant="h3" sx={{ fontSize: { xs: "24px", sm: "32px" } }}>
-          {t("exercises.showingResults")} {" "}
+          {t("exercises.showingResults")}{" "}
           <span style={{ textTransform: "capitalize", fontSize: "inherit" }}>
             "{getResultsLabel()}"
           </span>
@@ -146,12 +241,14 @@ const Exercises = ({ exercises, setExercises, bodyPart, detailFilter, setDetailF
             backgroundColor: isDarkMode ? "transparent" : "#FF2625",
             color: isDarkMode ? "#fff" : "#fff",
             borderColor: isDarkMode ? "rgba(255,255,255,0.12)" : undefined,
-            '&:hover': {
-              backgroundColor: isDarkMode ? "rgba(255,255,255,0.06)" : undefined,
-            }
+            "&:hover": {
+              backgroundColor: isDarkMode
+                ? "rgba(255,255,255,0.06)"
+                : undefined,
+            },
           }}
         >
-          {t('searchExercises.reset', 'Reset')}
+          {t("searchExercises.reset", "Reset")}
         </Button>
       </Box>
       <Box
@@ -171,7 +268,16 @@ const Exercises = ({ exercises, setExercises, bodyPart, detailFilter, setDetailF
           <ExerciseCard key={index} exercise={exercise} />
         ))}
       </Box>
-      <Stack mt="100px" alignItems="center">
+      <Stack
+        mt="100px"
+        alignItems="center"
+        sx={{
+          width: "100%",
+          overflowX: { xs: "auto", sm: "visible" },
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
         {exercises.length > 9 && (
           <Pagination
             color="standard"
@@ -180,10 +286,28 @@ const Exercises = ({ exercises, setExercises, bodyPart, detailFilter, setDetailF
             count={Math.ceil(exercises.length / exercisesPerPage)}
             page={currentPage}
             onChange={paginate}
+            renderItem={(item) => {
+              if (
+                item.type === "start-ellipsis" ||
+                item.type === "end-ellipsis"
+              ) {
+                return <EllipsisJump itemType={item.type} />;
+              }
+              return <PaginationItem {...item} />;
+            }}
             size="large"
             sx={{
+              overflowX: "auto",
+              px: 1,
+              "& .MuiPagination-ul": {
+                display: "flex",
+                flexWrap: "nowrap",
+                whiteSpace: "nowrap",
+              },
               "& .MuiPaginationItem-root": {
                 color: isDarkMode ? "#ffffff" : "#000000",
+                minWidth: { xs: 32, sm: "auto" },
+                px: { xs: 0.6, sm: 1 },
               },
               "& .MuiPaginationItem-root.Mui-selected": {
                 color: isDarkMode ? "#ffffff" : "#000000",
@@ -195,6 +319,17 @@ const Exercises = ({ exercises, setExercises, bodyPart, detailFilter, setDetailF
           />
         )}
       </Stack>
+      <PageJumpDialog
+        open={jumpOpen}
+        onClose={() => setJumpOpen(false)}
+        totalPages={totalPages}
+        initial={currentPage}
+        onSubmit={(page) => {
+          setCurrentPage(page);
+          const el = document.getElementById("exercises");
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }}
+      />
     </Box>
   );
 };

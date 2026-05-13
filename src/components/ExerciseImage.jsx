@@ -61,7 +61,7 @@ const ExerciseImage = ({
       alt={alt || exercise?.name || "Exercise"}
       loading={loading}
       className={className}
-      style={style}
+      style={{ cursor: "pointer", ...style }}
       onError={(event) => {
         if (fallbackSrc && event.currentTarget.src !== fallbackSrc) {
           event.currentTarget.src = fallbackSrc;

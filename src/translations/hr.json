@@ -179,6 +179,15 @@
     "loading": "Učitavanje...",
     "title": "Pogledaj videe vježbe <highlight>{{name}}</highlight>"
     },
+    "pageExercises": {
+      "title": "Vježbe {{sort}}",
+      "totalExercises": "Ukupno vježbi: {{count}}",
+      "sort": {
+        "az": "A-Z",
+        "za": "Z-A",
+        "common": "prema mišićnoj skupini"
+      }
+    },
     "similarExercises":{
         "targetSameMuscleGroup": "Vježbe koje ciljaju istu mišićnu grupu",
         "exercisesSameEquipment": "Vježbe koje koriste istu opremu"

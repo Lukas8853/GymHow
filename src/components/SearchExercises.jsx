@@ -13,7 +13,12 @@ import {
 import HorizontalScrollbar from "./HorizontalScrollbar.jsx";
 import { useTranslation, Trans } from "react-i18next";
 
-const SearchExercises = ({ setExercises, bodyPart, setBodyPart, setDetailFilter }) => {
+const SearchExercises = ({
+  setExercises,
+  bodyPart,
+  setBodyPart,
+  setDetailFilter,
+}) => {
   const [search, setSearch] = useState("");
   const [bodyParts, setBodyParts] = useState([]);
   const { t } = useTranslation();
@@ -88,7 +93,11 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart, setDetailFilter 
 
       // DEBUG: log search results for diagnosis
       // eslint-disable-next-line no-console
-      console.log("Search debug (cached):", { search, matches: searchedExercises.length, sample: searchedExercises.slice(0,5).map(e => e.name) });
+      console.log("Search debug (cached):", {
+        search,
+        matches: searchedExercises.length,
+        sample: searchedExercises.slice(0, 5).map((e) => e.name),
+      });
 
       setDetailFilter({ type: "search", value: search });
       setSearch("");
@@ -113,7 +122,11 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart, setDetailFilter 
 
     // DEBUG: log search results for diagnosis
     // eslint-disable-next-line no-console
-    console.log("Search debug (fetched):", { search, matches: searchedExercises.length, sample: searchedExercises.slice(0,5).map(e => e.name) });
+    console.log("Search debug (fetched):", {
+      search,
+      matches: searchedExercises.length,
+      sample: searchedExercises.slice(0, 5).map((e) => e.name),
+    });
 
     setDetailFilter({ type: "search", value: search });
     setSearch("");
@@ -176,22 +189,9 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart, setDetailFilter 
           type="text"
         />
 
-        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 1 }}>
-          <Button
-            variant="outlined"
-            sx={{
-              color: "#333",
-              borderColor: "rgba(0,0,0,0.12)",
-              textTransform: "none",
-              width: { lg: "120px", xs: "90px" },
-              fontSize: { lg: "16px", xs: "13px" },
-              height: "44px",
-            }}
-            onClick={handleReset}
-          >
-            Reset
-          </Button>
-
+        <Box
+          sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 1 }}
+        >
           <Button
             className="search-btn"
             sx={{

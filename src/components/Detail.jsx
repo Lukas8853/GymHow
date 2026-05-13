@@ -298,6 +298,9 @@ const Detail = ({ exerciseDetail }) => {
               onChange={(event) => setPlanDay(event.target.value)}
               sx={{
                 "& .MuiOutlinedInput-input": {
+                  color: "#111",
+                },
+                "body.dark & .MuiOutlinedInput-input": {
                   color: "#fff",
                 },
               }}
@@ -311,9 +314,7 @@ const Detail = ({ exerciseDetail }) => {
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleClosePlanDialog}>
-            {t("detail.cancel")}
-          </Button>
+          <Button onClick={handleClosePlanDialog}>{t("detail.cancel")}</Button>
           <Button variant="contained" onClick={handleConfirmAddToPlan}>
             {t("detail.confirmAdd")}
           </Button>

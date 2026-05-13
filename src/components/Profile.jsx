@@ -1242,11 +1242,12 @@ const Profile = () => {
         <Box
           className="light-surface"
           sx={{
-            backgroundColor: "#f9f9f9",
+            backgroundColor: "#f2f2f2",
             borderRadius: "20px",
             padding: "24px 20px",
             mb: 3,
             position: "relative",
+            border: "1px solid #f0f0f0",
           }}
         >
           {/* Logout gumb */}
@@ -1324,7 +1325,6 @@ const Profile = () => {
               </Typography>
             </Box>
           </Stack>
-
         </Box>
 
         {/* Omiljene vježbe */}
@@ -1477,14 +1477,8 @@ const Profile = () => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setLogoutDialogOpen(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleLogout}
-            variant="contained"
-            color="error"
-          >
+          <Button onClick={() => setLogoutDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleLogout} variant="contained" color="error">
             Sign out
           </Button>
         </DialogActions>
@@ -1502,16 +1496,15 @@ const Profile = () => {
         </DialogTitle>
         <DialogContent>
           <Typography sx={{ mb: 2 }}>
-            Are you sure you want to delete your account? This action cannot be undone.
+            Are you sure you want to delete your account? This action cannot be
+            undone.
           </Typography>
           <Typography variant="caption" sx={{ color: "#e53935" }}>
             All your data will be permanently deleted.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>
-            Cancel
-          </Button>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
           <Button
             onClick={handleConfirmDelete}
             variant="contained"
